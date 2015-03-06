@@ -19,3 +19,7 @@
 
 - name: Ensure the firewall is enabled and will start on boot.
   service: name=firewall state=started enabled=yes
+  
+- name: save iptables
+  shell: iptables-save > /etc/iptables.up.rules
+  sudo: true
