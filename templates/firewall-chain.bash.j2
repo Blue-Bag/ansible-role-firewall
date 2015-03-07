@@ -1,0 +1,143 @@
+#!/bin/bash
+# iptables firewall for common LAMP servers.
+#
+# Adapted from Jeff Geerling's firewall
+# to allow for chains and whitelists
+#
+# This file should be located at /etc/firewall.bash, and is meant to work with
+# Jeff Geerling's firewall init script.
+#
+# Common port reference:
+#   22: SSH
+#   25: SMTP
+#   80: HTTP
+#   123: DNS
+#   443: HTTPS
+#   2222: SSH alternate
+#   4949: Munin
+#   6082: Varnish admin
+#   8080: HTTP alternate (often used with Tomcat)
+#   8983: Tomcat HTTP
+#   8443: Tomcat HTTPS
+#   9000: SonarQube
+#
+# @author Jeff Geerling
+
+# No spoofing.
+if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]
+then
+for filter in /proc/sys/net/ipv4/conf/*/rp_filter
+do
+echo 1 > $filter
+done
+fi
+
+# Remove all rules and chains.
+iptables -F
+iptables -X
+
+# Accept traffic from loopback interface (localhost).
+iptables -A INPUT -i lo -j ACCEPT
+
+# Forwarded ports.
+{# Add a rule for each forwarded port #}
+{% for forwarded_port in firewall_forwarded_tcp_ports %}
+iptables -t nat -I PREROUTING -p tcp --dport {{ forwarded_port.src }} -j REDIRECT --to-port {{ forwarded_port.dest }}
+iptables -t nat -I OUTPUT -p tcp -o lo --dport {{ forwarded_port.src }} -j REDIRECT --to-port {{ forwarded_port.dest }}
+{% endfor %}
+{% for forwarded_port in firewall_forwarded_udp_ports %}
+iptables -t nat -I PREROUTING -p udp --dport {{ forwarded_port.src }} -j REDIRECT --to-port {{ forwarded_port.dest }}
+iptables -t nat -I OUTPUT -p udp -o lo --dport {{ forwarded_port.src }} -j REDIRECT --to-port {{ forwarded_port.dest }}
+{% endfor %}
+
+# Create Chains.
+{% for chain in firewall_protected_chains %}
+iptables -N {{ chain.name }}
+{% endfor %}
+iptables -N IP_Whitelist
+iptables -N IP_Blacklist
+iptables -N IP_BlacklistLOG
+
+{# Add a rule for each chain #}
+{% for chain in firewall_protected_chains %}
+iptables -A INPUT -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j {{ chain.name }}
+{% endfor %}
+
+# Fill Chains.
+{# Add a rule for each chain #}
+{% for chain in firewall_protected_chains %}
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --remove --name {{ chain.name }} --rsource
+{% if chain.default == 'DROP' %}
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Whitelist
+{% else %}
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Blacklist
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "{{ chain.name }} Attempt"
+{% endif %}
+{% if chain.ratelimit is defined %}
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --seconds {{ chain.hit_ttl|default(60) }} --hitcount {{ chain.hitcount|default(4) }} --rttl --name {{ chain.port }} --rsource -j {{ chain.default }}
+{% else %}
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j {{ chain.default }}
+{% endif %}
+{% endfor %}
+
+#Create whitelist
+{% for wl in firewall_whitelist %}
+# {{ wl.name }}
+iptables -A IP_Whitelist -s {{ wl.ip }} -j ACCEPT
+{% endfor %}
+
+#Create Blacklist
+{% for bl in firewall_blacklist %}
+# {{ bl.name }}
+iptables -A IP_Blacklist -s {{ bl.ip }} -p tcp -m tcp -m state --state NEW -j IP_BLacklistLOG
+{% endfor %}
+
+#Create Blacklist log
+iptables -A IP_BLacklistLOG -p tcp -m tcp  -m state --state NEW -m recent --update --rttl  --rsource -j LOG --log-level 7 --log-prefix "BL Attempt"
+iptables -A IP_BLacklistLOG -p tcp -m tcp  -m state --state NEW -j DROP
+
+
+{% for port in firewall_allowed_udp_ports %}
+iptables -A INPUT -p udp -m udp --dport {{ port }} -j ACCEPT
+{% endfor %}
+
+{% if firewall_allow_ping %}
+# Accept icmp ping requests.
+iptables -A INPUT -p icmp -j ACCEPT
+{% else %}
+# Don't allow pings through
+iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j DROP
+{% endif %}
+
+# Allow NTP traffic for time synchronization.
+iptables -A OUTPUT -p udp --dport 123 -j ACCEPT
+iptables -A INPUT -p udp --sport 123 -j ACCEPT
+
+# Additional custom rules.
+{% for rule in firewall_additional_rules %}
+{{ rule }}
+{% endfor %}
+
+{% if firewall_block_portscan %}
+{% include 'block-portscan.j2' %}
+{% endif %}
+
+{% if firewall_block_spoofed %}
+{% include 'block-spoofed.j2' %}
+{% endif %}
+
+{% if firewall_block_smurf %}
+{% include 'block-smurf.j2' %}
+{% endif %}
+
+# Allow established connections:
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Log EVERYTHING (ONLY for Debug).
+# iptables -A INPUT -j LOG
+
+# Log other incoming requests (all of which are dropped) at 15/minute max.
+iptables -A INPUT -m limit --limit 15/minute -j LOG --log-level 7 --log-prefix "Dropped by firewall: "
+
+# Drop all other traffic.
+iptables -A INPUT -j DROP

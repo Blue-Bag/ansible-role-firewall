@@ -1,0 +1,7 @@
+# Stop smurf attacks  (http://serverfault.com/questions/245711/iptables-tips-tricks)
+iptables -A INPUT -p icmp -m icmp --icmp-type address-mask-request -j DROP
+iptables -A INPUT -p icmp -m icmp --icmp-type timestamp-request -j DROP
+iptables -A INPUT -p icmp -m icmp -j DROP
+
+# Drop excessive RST packets to avoid smurf attacks
+iptables -A INPUT -p tcp -m tcp --tcp-flags RST RST -m limit --limit 2/second --limit-burst 2 -j ACCEPT

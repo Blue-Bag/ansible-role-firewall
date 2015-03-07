@@ -1,4 +1,8 @@
 ---
+# firewall mode [simple | chain ]
+firewall_mode: simple
+
+#=======================   simple config
 firewall_allowed_tcp_ports:
   - "22"
   - "25"
@@ -8,3 +12,49 @@ firewall_allowed_udp_ports: []
 firewall_forwarded_tcp_ports: []
 firewall_forwarded_udp_ports: []
 firewall_additional_rules: []
+
+
+#=======================   chain config
+firewall_whitelist:
+  - { name: 'local', ip: "192.168.100.1" }
+  
+firewall_blacklist:
+  - { name: 'Some rogue', ip: "96.47.225.0/24" }
+
+firewall_protected_chains:
+  - {
+      port: "22",
+      name: "SSH",
+      default: "DROP",
+      ratelimit: "True",
+      hit_rate: 4,
+      hit_ttl: 60
+      
+     }
+  - {
+      port: "10000",
+      name: "WEBMIN",
+      default: "DROP"
+     }  
+  - {
+      port: "80",
+      name: "HTTP",
+      default: "ACCEPT"
+     } 
+  - {
+      port: "443",
+      name: "HTTPS",
+      default: "ACCEPT"
+     } 
+  - {
+      port: "3306",
+      name: "MYSQL",
+      default: "DROP"
+     } 
+
+#========================  extended rules
+firewall_block_portscan: true
+firewall_block_spoofed: true
+firewall_block_smurf: true
+firewall_allow_ping: true
+    

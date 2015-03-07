@@ -12,6 +12,12 @@
 
 - name: Copy firewall script into place.
   template: src=firewall.bash.j2 dest=/etc/firewall.bash owner=root group=root mode=0744
+  when: firewall_mode == 'simple'
+  notify: restart firewall
+  
+- name: Copy firewall chain script into place.
+  template: src=firewall-chain.bash.j2 dest=/etc/firewall.bash owner=root group=root mode=0744
+  when: firewall_mode == 'chain'
   notify: restart firewall
 
 - name: Copy firewall init script into place.
