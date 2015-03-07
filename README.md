@@ -39,58 +39,57 @@ Any additional (custom) rules to be added to the firewall (in the same format yo
 
 ## Additional variables for chain
 # firewall mode [simple | chain ]
-firewall_mode: simple
+    firewall_mode: simple
 In simple mode the role is as per the original
 In chain mode the role uses chains, whitelists and other blocks
 All of the following variables are only relevant to chain mode
  
-   firewall_whitelist:
+    firewall_whitelist:
      - { name: 'local', ip: "192.168.100.1" }
 A list of IPs that will be whitelisted
   
-   firewall_blacklist:
+    firewall_blacklist:
      - { name: 'Some rogue', ip: "96.47.225.0/24" }
 A list of IPs that will be blacklisted
 
-firewall_protected_chains:
-  - {
-      port: "22",
-      name: "SSH",
-      default: "DROP",
-      ratelimit: "True",
-      hit_rate: 4,
-      hit_ttl: 60
-      
-     }
-  - {
-      port: "80",
-      name: "HTTP",
-      default: "ACCEPT"
-     } 
-  - {
-      port: "443",
-      name: "HTTPS",
-      default: "ACCEPT"
-     } 
-  - {
-      port: "3306",
-      name: "MYSQL",
-      default: "DROP"
-     } 
+    firewall_protected_chains:
+      - {
+         port: "22",
+         name: "SSH",
+         default: "DROP",
+         ratelimit: "True",
+         hit_rate: 4,
+         hit_ttl: 60
+        }
+      - {
+         port: "80",
+         name: "HTTP",
+         default: "ACCEPT"
+        } 
+      - {
+         port: "443",
+         name: "HTTPS",
+         default: "ACCEPT"
+         } 
+      - {
+         port: "3306",
+         name: "MYSQL",
+         default: "DROP"
+         } 
 Chain definitions. The port to create a chain for and the default action
 
 # extended rules
-  firewall_block_portscan: true
+    firewall_block_portscan: true
 Include a portscan protection block
   
-  firewall_block_spoofed: true
+    firewall_block_spoofed: true
 Inclde a block for spoofed addresses 
 This also has an exclusion to not include when running against a local group host
 
-  firewall_block_smurf: true
+    firewall_block_smurf: true
 A block to protect against smurf attacks
   
-  firewall_allow_ping: true
+    firewall_allow_ping: true
 An option t enable/disable ping blocking
 Note you may need this on for monitoring
 
