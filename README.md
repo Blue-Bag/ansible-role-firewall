@@ -8,7 +8,7 @@ This firewall aims for simplicity over complexity, and only opens a few specific
 
 After the role is run, a `firewall` init service will be available on the server. You can use `service firewall [start|stop|restart|status]` to control the firewall.
 
-Using Jeff Geerlings role as a base tis has been, updated to enable more complex chain based firewall and block for common attacks.
+Using Jeff Geerlings role as a base this has been, updated to enable more complex chain based mode for the firewall and blocks for common attacks.
 
 ## Requirements
 
