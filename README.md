@@ -2,11 +2,13 @@
 
 [![Build Status](https://travis-ci.org/geerlingguy/ansible-role-firewall.svg?branch=master)](https://travis-ci.org/geerlingguy/ansible-role-firewall)
 
-Installs a simple iptables-based firewall for RHEL/CentOS or Debian/Ubunty systems.
+Installs a simple iptables-based firewall for RHEL/CentOS or Debian/Ubuntu systems.
 
 This firewall aims for simplicity over complexity, and only opens a few specific ports for incoming traffic (configurable through Ansible variables). If you have a rudimentary knowledge of `iptables` and/or firewalls in general, this role should be a good starting point for a secure system firewall.
 
 After the role is run, a `firewall` init service will be available on the server. You can use `service firewall [start|stop|restart|status]` to control the firewall.
+
+Using Jeff Geerlings role as a base tis has been, updated to enable more complex chain based firewall and block for common attacks.
 
 ## Requirements
 
@@ -34,6 +36,64 @@ Forward `src` port to `dest` port, either TCP or UDP (respectively).
     firewall_additional_rules: []
 
 Any additional (custom) rules to be added to the firewall (in the same format you would add them via command line, e.g. `iptables [rule]`).
+
+## Additional variables for chain
+# firewall mode [simple | chain ]
+firewall_mode: simple
+In simple mode the role is as per the original
+In chain mode the role uses chains, whitelists and other blocks
+All of the following variables are only relevant to chain mode
+ 
+   firewall_whitelist:
+     - { name: 'local', ip: "192.168.100.1" }
+A list of IPs that will be whitelisted
+  
+   firewall_blacklist:
+     - { name: 'Some rogue', ip: "96.47.225.0/24" }
+A list of IPs that will be blacklisted
+
+firewall_protected_chains:
+  - {
+      port: "22",
+      name: "SSH",
+      default: "DROP",
+      ratelimit: "True",
+      hit_rate: 4,
+      hit_ttl: 60
+      
+     }
+  - {
+      port: "80",
+      name: "HTTP",
+      default: "ACCEPT"
+     } 
+  - {
+      port: "443",
+      name: "HTTPS",
+      default: "ACCEPT"
+     } 
+  - {
+      port: "3306",
+      name: "MYSQL",
+      default: "DROP"
+     } 
+Chain definitions. The port to create a chain for and the default action
+
+# extended rules
+  firewall_block_portscan: true
+Include a portscan protection block
+  
+  firewall_block_spoofed: true
+Inclde a block for spoofed addresses 
+This also has an exclusion to not include when running against a local group host
+
+  firewall_block_smurf: true
+A block to protect against smurf attacks
+  
+  firewall_allow_ping: true
+An option t enable/disable ping blocking
+Note you may need this on for monitoring
+
 
 ## Dependencies
 
