@@ -2,7 +2,7 @@
 # firewall mode [simple | chain ]
 firewall_mode: simple
 
-#=======================   simple config
+# =======================   simple config
 firewall_allowed_tcp_ports:
   - "22"
   - "25"
@@ -14,7 +14,7 @@ firewall_forwarded_udp_ports: []
 firewall_additional_rules: []
 
 
-#=======================   chain config
+# =======================   chain config
 firewall_whitelist:
   - { name: 'local', ip: "192.168.100.1" }
   
@@ -52,7 +52,7 @@ firewall_protected_chains:
       default: "DROP"
      } 
 
-#========================  extended rules
+# ========================  extended rules
 firewall_block_portscan: true
 firewall_block_spoofed: true
 firewall_block_smurf: true

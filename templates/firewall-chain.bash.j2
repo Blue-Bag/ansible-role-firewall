@@ -89,12 +89,12 @@ iptables -A IP_Whitelist -s {{ wl.ip }} -j ACCEPT
 #Create Blacklist
 {% for bl in firewall_blacklist %}
 # {{ bl.name }}
-iptables -A IP_Blacklist -s {{ bl.ip }} -p tcp -m tcp -m state --state NEW -j IP_BLacklistLOG
+iptables -A IP_Blacklist -s {{ bl.ip }} -p tcp -m tcp -m state --state NEW -j IP_BlacklistLOG
 {% endfor %}
 
 #Create Blacklist log
-iptables -A IP_BLacklistLOG -p tcp -m tcp  -m state --state NEW -m recent --update --rttl  --rsource -j LOG --log-level 7 --log-prefix "BL Attempt"
-iptables -A IP_BLacklistLOG -p tcp -m tcp  -m state --state NEW -j DROP
+iptables -A IP_BlacklistLOG -p tcp -m tcp  -m state --state NEW -m recent --update --rttl  --rsource -j LOG --log-level 7 --log-prefix "BL Attempt"
+iptables -A IP_BlacklistLOG -p tcp -m tcp  -m state --state NEW -j DROP
 
 
 {% for port in firewall_allowed_udp_ports %}
@@ -103,7 +103,8 @@ iptables -A INPUT -p udp -m udp --dport {{ port }} -j ACCEPT
 
 {% if firewall_allow_ping %}
 # Accept icmp ping requests.
-iptables -A INPUT -p icmp -j ACCEPT
+#iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
+iptables -A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit {{ firewall_allow_ping_limit|default('1/second') }} -j ACCEPT
 {% else %}
 # Don't allow pings through
 iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j DROP
