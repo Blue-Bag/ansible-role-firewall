@@ -77,8 +77,15 @@ A list of IPs that will be blacklisted
          default: "DROP"
          } 
 Chain definitions. The port to create a chain for and the default action
+  
+    firewall_allow_ping: true
+An option t enable/disable ping blocking
+Note you may need this on for monitoring
 
 # extended rules
+    firewall_extra_security: true
+Option to exclude all of the following extra security blocks
+
     firewall_block_portscan: true
 Include a portscan protection block
   
@@ -88,10 +95,7 @@ This also has an exclusion to not include when running against a local group hos
 
     firewall_block_smurf: true
 A block to protect against smurf attacks
-  
-    firewall_allow_ping: true
-An option t enable/disable ping blocking
-Note you may need this on for monitoring
+
 
 
 ## Dependencies
