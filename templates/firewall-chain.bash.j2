@@ -119,16 +119,18 @@ iptables -A INPUT -p udp --sport 123 -j ACCEPT
 {{ rule }}
 {% endfor %}
 
-{% if firewall_block_portscan %}
+{% if firewall_extra_security %}
+  {% if firewall_block_portscan %}
 {% include 'block-portscan.j2' %}
-{% endif %}
+  {% endif %}
 
-{% if firewall_block_spoofed %}
+  {% if firewall_block_spoofed %}
 {% include 'block-spoofed.j2' %}
-{% endif %}
+  {% endif %}
 
-{% if firewall_block_smurf %}
+  {% if firewall_block_smurf %}
 {% include 'block-smurf.j2' %}
+  {% endif %}
 {% endif %}
 
 # Allow established connections:

@@ -53,6 +53,7 @@ firewall_protected_chains:
      } 
 
 # ========================  extended rules
+firewall_extra_security: true
 firewall_block_portscan: true
 firewall_block_spoofed: true
 firewall_block_smurf: true
