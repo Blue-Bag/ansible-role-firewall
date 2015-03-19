@@ -18,7 +18,7 @@ firewall_additional_rules: []
 firewall_whitelist:
   - { name: 'local', ip: "192.168.100.1" }
   
-firewall_whitelistgroup: []
+#firewall_whitelistgroup: []
 
   
 firewall_blacklist:

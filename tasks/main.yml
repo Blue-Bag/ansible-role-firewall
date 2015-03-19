@@ -14,11 +14,11 @@
   template: src=firewall.bash.j2 dest=/etc/firewall.bash owner=root group=root mode=0744
   when: firewall_mode == 'simple'
   notify: restart firewall
-
+#
 # note this needs the fetchlistfromdict filter plugin to work
 - name: Setfact for allowed ips list for chain script
   set_fact:
-    allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list }}"
+    allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
   when: firewall_mode == 'chain'
 
 - name: Copy firewall chain script into place.
@@ -31,7 +31,7 @@
 
 - name: Ensure the firewall is enabled and will start on boot.
   service: name=firewall state=started enabled=yes
-  
+
 - name: save iptables
   shell: iptables-save > /etc/iptables.up.rules
   sudo: true

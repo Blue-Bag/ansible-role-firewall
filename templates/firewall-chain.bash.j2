@@ -86,11 +86,10 @@ iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --s
 iptables -A IP_Whitelist -s {{ wl.ip }} -j ACCEPT
 {% endfor %}
 
-% for wl in firewall_whitelist %}
-# {{ wl.name }}
-iptables -A IP_Whitelist -s {{ wl.ip }} -j ACCEPT
+{% for val in allowed_ips %}
+# allowed
+iptables -A IP_Whitelist -s {{ val }} -j ACCEPT
 {% endfor %}
-
 
 #Create Blacklist
 {% for bl in firewall_blacklist %}
