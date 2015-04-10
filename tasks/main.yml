@@ -14,7 +14,7 @@
   template: src=firewall.bash.j2 dest=/etc/firewall.bash owner=root group=root mode=0744
   when: firewall_mode == 'simple'
   notify: restart firewall
-#
+
 # note this needs the fetchlistfromdict filter plugin to work
 - name: Setfact for allowed ips list for chain script
   set_fact:
