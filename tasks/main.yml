@@ -18,7 +18,7 @@
 # note this needs the fetchlistfromdict filter plugin to work
 - name: Setfact for allowed ips list for chain script
   set_fact:
-    allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
+    firewall_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
   when: firewall_mode == 'chain'
 
 - name: Copy firewall chain script into place.

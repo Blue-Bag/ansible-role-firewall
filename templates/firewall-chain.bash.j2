@@ -86,7 +86,7 @@ iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --s
 iptables -A IP_Whitelist -s {{ wl.ip }} -j ACCEPT
 {% endfor %}
 
-{% for val in allowed_ips %}
+{% for val in firewall_allowed_ips %}
 # allowed
 iptables -A IP_Whitelist -s {{ val }} -j ACCEPT
 {% endfor %}
