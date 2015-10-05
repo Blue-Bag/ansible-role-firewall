@@ -19,7 +19,7 @@
 - name: Setfact for allowed ips list for chain script
   set_fact:
     firewall_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
-  when: firewall_mode == 'chain'
+  when: firewall_mode == 'chain' and firewall_whitelistgroup is defined
 
 - name: Copy firewall chain script into place.
   template: src=firewall-chain.bash.j2 dest=/etc/firewall.bash owner=root group=root mode=0744
