@@ -36,6 +36,10 @@ fi
 iptables -F
 iptables -X
 
+{% if firewall_ipset %}
+{% include 'firewall-ipset.j2' %}
+{% endif %}
+
 # Accept traffic from loopback interface (localhost).
 iptables -A INPUT -i lo -j ACCEPT
 

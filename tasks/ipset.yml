@@ -1,0 +1,23 @@
+---
+
+- name: Ensure ipset is installed (Debian).
+  apt: pkg=ipset state=installed
+  when: ansible_os_family == 'Debian'
+
+
+- name: Ensure ipset packages are installed (RedHat).
+  yum:
+    name: "ipset"
+    state: installed
+    enablerepo: "{{ php_enablerepo }}"
+  when: ansible_os_family == 'RedHat'
+
+
+- name: Put up the block lists
+  copy:
+    src: "{{ item.src }}"
+    dest: "/etc/firewall-{{ item.name }}.txt"
+    owner: root
+    group: root
+    mode: 0644
+  with_items: firewall_blocklists

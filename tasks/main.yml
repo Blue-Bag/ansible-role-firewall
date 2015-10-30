@@ -7,6 +7,12 @@
   apt: pkg=iptables state=installed
   when: ansible_os_family == 'Debian'
 
+- include: badips.yml
+  when: firewall_block_badips
+
+- include: ipset.yml
+  when: firewall_ipset
+
 - name: Flush iptables the first time playbook runs.
   command: iptables -F creates=/etc/init.d/firewall
 

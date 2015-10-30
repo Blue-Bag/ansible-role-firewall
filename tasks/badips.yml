@@ -1,0 +1,35 @@
+---
+
+# - name: Download the badips list
+#   get_url:
+#     url: "http://www.badips.com/get/list/any/0/apidoc?key={{ badips_key }}"
+#     dest: "{{ firewall_badips_db }}"
+#     mode: 0440
+#   sudo: true
+
+- name: create badips folder
+  file:
+    path: "{{ firewall_badips_folder }}"
+    owner: "root"
+    group: "root"
+    mode: "0740"
+    recurse: yes
+    state: directory
+  sudo: true
+
+- name: Put up the badips fetch script
+  template:
+    src: badips.sh.j2
+    dest: "{{ firewall_badips_folder }}/badips.sh"
+    owner: root
+    group: root
+    mode: 0740
+  sudo: true
+
+- name: Run the script once
+  shell: "{{ firewall_badips_folder }}badips.sh >> badipslog.txt"
+  args:
+    chdir: "{{ firewall_badips_folder }}"
+    creates: badipslog.txt
+
+# - name: Create a cron job to run the script

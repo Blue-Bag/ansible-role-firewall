@@ -61,3 +61,36 @@ firewall_block_portscan: true
 firewall_block_spoofed: true
 firewall_block_smurf: true
 firewall_allow_ping: true
+
+# ========================  ipset
+firewall_ipset: False
+#Create lists, for network blocks and single IP addresses
+#hash:net = Networks
+#hash:ip = single IPs
+firewall_blocklists:
+  - {
+      name: blocked-nets,
+      type: 'hash:net',
+      src: 'blocked-nets.txt'
+  }
+  - {
+      name: blocked-ips,
+      type: 'hash:ip',
+      src: 'blocked-ips.txt'
+  }
+
+# ======================= repo for Redhat ipset
+# Pass in a comma-separated list of repos to use (e.g. "remi,epel").
+php_enablerepo: "epel"
+
+# =======================  Badips
+firewall_badips_key: ''
+firewall_block_badips: False
+# level to report 0 = all - used as we want all of ours
+firewall_badips_level: '0'
+# service to report on - we want all of ours
+firewall_badips_service: 'any'
+firewall_badips_ipset: 'badips'
+firewall_badips_folder: '/usr/share/badips'
+firewall_badips_db: '/usr/share/badips/badips.db'
+
