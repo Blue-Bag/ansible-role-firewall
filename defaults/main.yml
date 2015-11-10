@@ -84,7 +84,7 @@ firewall_blocklists:
 php_enablerepo: "epel"
 
 # =======================  Badips
-firewall_badips_key: ''
+# badips_key: ''
 firewall_block_badips: False
 # level to report 0 = all - used as we want all of ours
 firewall_badips_level: '0'
