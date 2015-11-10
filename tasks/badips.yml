@@ -26,8 +26,11 @@
     mode: 0740
   sudo: true
 
+- name: Set the key on the server
+  command: "wget -qO- https://www.badips.com/set/key{{ badips_key}}"
+
 - name: Run the script once
-  shell: "{{ firewall_badips_folder }}badips.sh >> badipslog.txt"
+  shell: "{{ firewall_badips_folder }}/badips.sh >> badipslog.txt"
   args:
     chdir: "{{ firewall_badips_folder }}"
     creates: badipslog.txt
