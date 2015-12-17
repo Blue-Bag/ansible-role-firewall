@@ -8,6 +8,13 @@ firewall_allowed_tcp_ports:
   - "25"
   - "80"
   - "443"
+
+# allow mail port out
+firewall_allowed_tcp_ports_out:
+  - "25"
+
+
+
 firewall_allowed_udp_ports: []
 firewall_forwarded_tcp_ports: []
 firewall_forwarded_udp_ports: []
@@ -52,6 +59,11 @@ firewall_protected_chains:
   - {
       port: "3306",
       name: "MYSQL",
+      default: "DROP"
+     }
+  - {
+      port: "2812",
+      name: "MONIT",
       default: "DROP"
      }
 
