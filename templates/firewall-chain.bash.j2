@@ -70,15 +70,17 @@ iptables -A INPUT -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j
 # Fill Chains.
 {# Add a rule for each chain #}
 {% for chain in firewall_protected_chains %}
-iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --remove --name {{ chain.name }} --rsource
-{% if chain.default == 'DROP' %}
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --set --name {{ chain.name }} --rsource
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Whitelist
-{% else %}
+{% if chain.default == 'ACCEPT'  %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Blacklist
+{% else %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "{{ chain.name }} Attempt"
 {% endif %}
 {% if chain.ratelimit is defined %}
-iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --seconds {{ chain.hit_ttl|default(60) }} --hitcount {{ chain.hitcount|default(4) }} --rttl --name {{ chain.port }} --rsource -j {{ chain.default }}
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --seconds {{ chain.hit_ttl|default(60) }} --hitcount {{ chain.hitcount|default(4) }} --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "Anti {{ chain.name }}-Bruteforce: " --log-level 6
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --seconds {{ chain.hit_ttl|default(60) }} --hitcount {{ chain.hitcount|default(4) }} --rttl --name {{ chain.name }} --rsource -j DROP
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j {{ chain.default }}
 {% else %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j {{ chain.default }}
 {% endif %}
