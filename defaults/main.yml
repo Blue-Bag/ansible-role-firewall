@@ -35,16 +35,19 @@ firewall_protected_chains:
   - {
       port: "22",
       name: "SSH",
-      default: "DROP",
+      default: "ACCEPT",
       ratelimit: "True",
       hit_rate: 4,
-      hit_ttl: 60
+      hit_ttl: 3600
 
      }
   - {
       port: "10000",
       name: "WEBMIN",
       default: "DROP"
+      ratelimit: "True",
+      hit_rate: 4,
+      hit_ttl: 3600
      }
   - {
       port: "80",
