@@ -44,7 +44,7 @@ firewall_protected_chains:
   - {
       port: "10000",
       name: "WEBMIN",
-      default: "DROP"
+      default: "ACCEPT",
       ratelimit: "True",
       hit_rate: 4,
       hit_ttl: 3600
