@@ -17,9 +17,9 @@ iptables -I INPUT -m set --match-set {{ list.name }} src -j blocked_traffic
 
 # add the ips/networks to the lists
 {% for list in firewall_blocklists %}
-while read ipnet-{{ list.name }}
+while read ip{{ loop.index }}
 do
-    ipset -A {{ list.name }} $ipnet-{{ list.name }}
+    ipset -A {{ list.name }} $ip{{ loop.index }}
 done < /etc/firewall-{{ list.name }}.txt | sort | uniq
 {% endfor %}
 
