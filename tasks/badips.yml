@@ -5,7 +5,7 @@
 #     url: "http://www.badips.com/get/list/any/0/apidoc?key={{ badips_key }}"
 #     dest: "{{ firewall_badips_db }}"
 #     mode: 0440
-#   sudo: true
+#   become: true
 
 - name: create badips folder
   file:
@@ -15,7 +15,7 @@
     mode: "0740"
     recurse: yes
     state: directory
-  sudo: true
+  become: true
 
 - name: Put up the badips fetch script
   template:
@@ -24,7 +24,7 @@
     owner: root
     group: root
     mode: 0740
-  sudo: true
+  become: true
 
 - name: Set the key on the server
   command: "wget -qO- https://www.badips.com/set/key{{ badips_key}}"

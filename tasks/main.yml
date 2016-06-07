@@ -40,4 +40,4 @@
 
 - name: save iptables
   shell: iptables-save > /etc/iptables.up.rules
-  sudo: true
+  become: true
