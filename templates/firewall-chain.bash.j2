@@ -36,12 +36,22 @@ fi
 iptables -F
 iptables -X
 
+
+# Accept traffic from loopback interface (localhost).
+iptables -A INPUT -i lo -j ACCEPT
+
 {% if firewall_ipset %}
 {% include 'firewall-ipset.j2' %}
 {% endif %}
 
-# Accept traffic from loopback interface (localhost).
-iptables -A INPUT -i lo -j ACCEPT
+# create a whiter than white list
+iptables -N IP_WTWhitelist
+#Create whitelist
+{% for wl in firewall_whitelist %}
+iptables -I IP_WTWhitelist -s {{ wl.ip }} -j ACCEPT
+{% endfor %}
+
+iptables -I INPUT -p tcp -m tcp  -m state --state NEW -j IP_WTWhitelist
 
 # Forwarded ports.
 {# Add a rule for each forwarded port #}
@@ -58,13 +68,14 @@ iptables -t nat -I OUTPUT -p udp -o lo --dport {{ forwarded_port.src }} -j REDIR
 {% for chain in firewall_protected_chains %}
 iptables -N {{ chain.name }}
 {% endfor %}
+
 iptables -N IP_Whitelist
 iptables -N IP_Blacklist
 iptables -N IP_BlacklistLOG
 
 {# Add a rule for each chain #}
 {% for chain in firewall_protected_chains %}
-iptables -A INPUT -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j {{ chain.name }}
+iptables -A INPUT -p tcp -m tcp --dport {{ chain.port }} -m state --state {{ chain.state | default('NEW')}} -j {{ chain.name }}
 {% endfor %}
 
 # Fill Chains.
@@ -82,7 +93,20 @@ iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --s
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --seconds {{ chain.hit_ttl|default(60) }} --hitcount {{ chain.hitcount|default(4) }} --rttl --name {{ chain.name }} --rsource -j DROP
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j {{ chain.default }}
 {% else %}
+{% if chain.ddos is defined and chain.ddos == true %}
+#iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state RELATED,ESTABLISHED -m limit --limit {{ chain.ddos_rate }} --limit-burst {{ chain.ddos_burst }} -j ACCEPT
+#iptables -A INPUT -j LOG -p tcp --dport 80 -m state --state NEW --log-prefix 'TCP {{ chain.port }} Burst Exhausted'
+
+iptables -A {{ chain.name }} -p tcp --dport {{ chain.port }} -m state --state NEW -m limit --limit {{ chain.ddos_rate }} --limit-burst {{ chain.ddos_burst }} -j ACCEPT
+# not going to get here as chain is already NEW
+iptables -A {{ chain.name }} -m state --state RELATED,ESTABLISHED -m limit --limit {{ chain.ddos_rate }} --limit-burst {{ chain.ddos_burst }} -j ACCEPT
+# log blocked packets
+iptables -A {{ chain.name }} -j LOG -p tcp --dport 80 -m state --state NEW --log-prefix 'TCP {{ chain.port }} Burst Exhausted'
+# block packets
+iptables -A {{ chain.name }} -j REJECT
+{% else %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j {{ chain.default }}
+{% endif %}
 {% endif %}
 {% endfor %}
 
