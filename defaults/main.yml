@@ -31,9 +31,14 @@ firewall_whitelist:
 firewall_blacklist:
   - { name: 'Some rogue', ip: "96.47.225.0/24" }
 
+firewall_ddos_rate: '150/second'
+firewall_ddos_burst: '160'
+
+
 firewall_protected_chains:
   - {
       port: "22",
+      state: "NEW",
       name: "SSH",
       default: "ACCEPT",
       ratelimit: "True",
@@ -52,7 +57,11 @@ firewall_protected_chains:
   - {
       port: "80",
       name: "HTTP",
-      default: "ACCEPT"
+      state: "NEW,RELATED,ESTABLISHED",
+      default: "ACCEPT",
+      ddos: yes,
+      ddos_rate: "{{ firewall_ddos_rate }}",
+      ddos_burst: "{{ firewall_ddos_burst }}"
      }
   - {
       port: "443",
@@ -69,6 +78,8 @@ firewall_protected_chains:
       name: "MONIT",
       default: "DROP"
      }
+
+
 
 # ========================  extended rules
 firewall_extra_security: true
