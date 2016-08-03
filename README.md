@@ -43,11 +43,11 @@ Any additional (custom) rules to be added to the firewall (in the same format yo
 In simple mode the role is as per the original
 In chain mode the role uses chains, whitelists and other blocks
 All of the following variables are only relevant to chain mode
- 
+
     firewall_whitelist:
      - { name: 'local', ip: "192.168.100.1" }
 A list of IPs that will be whitelisted
-  
+
     firewall_blacklist:
      - { name: 'Some rogue', ip: "96.47.225.0/24" }
 A list of IPs that will be blacklisted
@@ -65,19 +65,19 @@ A list of IPs that will be blacklisted
          port: "80",
          name: "HTTP",
          default: "ACCEPT"
-        } 
+        }
       - {
          port: "443",
          name: "HTTPS",
          default: "ACCEPT"
-         } 
+         }
       - {
          port: "3306",
          name: "MYSQL",
          default: "DROP"
-         } 
+         }
 Chain definitions. The port to create a chain for and the default action
-  
+
     firewall_allow_ping: true
 An option t enable/disable ping blocking
 Note you may need this on for monitoring
@@ -88,14 +88,24 @@ Option to exclude all of the following extra security blocks
 
     firewall_block_portscan: true
 Include a portscan protection block
-  
+
     firewall_block_spoofed: true
-Inclde a block for spoofed addresses 
+Inclde a block for spoofed addresses
 This also has an exclusion to not include when running against a local group host
 
     firewall_block_smurf: true
 A block to protect against smurf attacks
 
+Rate limiting:
+iptables -A INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 15 --connlimit-mask 32 -j REJECT --reject-with tcp-reset
+
+
+## IPset
+
+ipset add blocked-ips 195.154.215.122
+
+# sort and filter the blocked ips list
+cat blocked-ips.txt | sort -n | uniq > blocked-ips.txt
 
 
 ## Dependencies
