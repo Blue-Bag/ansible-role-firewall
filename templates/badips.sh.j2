@@ -1,0 +1,45 @@
+#!/bin/bash
+# Script for blocking IPs which have been reported to www.badips.com
+# Usage: Just execute by e.g. cron every day
+# adapted from http://www.timokorthals.de/?p=334
+# ---------------------------
+
+_ipt=/sbin/ipset                         # Location of ipset (might be correct)
+_input={{ firewall_badips_db }}          # Name of database (will be downloaded with this name)
+_droplist={{ firewall_badips_ipset }}    # Name of ipset in iptables (Only change this if you have already a chain with this name)
+_level={{ firewall_badips_level }}                                 # Blog level: not so bad/false report (0) over confirmed bad (3) to quite aggressive (5) (see www.badips.com for that)
+_service={{ firewall_badips_service }}                             # Logged service (see www.badips.com for that)
+_key={{ badips_key }}           # badips key to get list from
+
+# Get the bad IPs
+wget -qO- "http://www.badips.com/get/list/${_service}/$_level/apidoc?key=${_key}&format=ipset" > $_input || { echo "$0: Unable to download ip list."; exit 1; }
+
+### Setup our black list ###
+# First flush it
+# we cant destroy it as it is in use
+# so we have to drop the iptables rule that uses it
+iptables -D INPUT -m set --match-set badips src -j blocked_traffic
+
+# save the current rule set
+ipset save badips > badips.save
+# if the ipset exists we will get a list of it's contents
+# if it doesn't exist we get an empty file
+
+# compare and add the new ips
+grep -Fvf badips.save {{ firewall_badips_db }} | ipset restore
+
+# if the ipset didn't exist
+# we are OK as the grep will include the create line!
+# ipset destroy $_droplist
+# ipset restore < $_input
+
+# restore the iptables rule
+iptables -I INPUT -m set --match-set badips src -j blocked_traffic
+# ipset -N $_droplist hash:ip hashsize 4096
+
+# while read badip
+# do
+#     ipset -A $_droplist $badip
+# done < $_input | sort | uniq
+
+exit 0

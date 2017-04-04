@@ -47,11 +47,18 @@ iptables -t nat -I PREROUTING -p udp --dport {{ forwarded_port.src }} -j REDIREC
 iptables -t nat -I OUTPUT -p udp -o lo --dport {{ forwarded_port.src }} -j REDIRECT --to-port {{ forwarded_port.dest }}
 {% endfor %}
 
-# Open ports.
-{# Add a rule for each open port #}
+# Open ports - in.
+{# Add a rule for each open incoming port #}
 {% for port in firewall_allowed_tcp_ports %}
 iptables -A INPUT -p tcp -m tcp --dport {{ port }} -j ACCEPT
 {% endfor %}
+
+# Open ports - out.
+{# Add a rule for each open outgoing port #}
+{% for port in firewall_allowed_tcp_ports_out %}
+iptables -A OUTPUT -p tcp --dport 25 -j ACCEPT
+{% endfor %}
+
 {% for port in firewall_allowed_udp_ports %}
 iptables -A INPUT -p udp -m udp --dport {{ port }} -j ACCEPT
 {% endfor %}

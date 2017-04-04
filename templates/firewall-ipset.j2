@@ -1,0 +1,35 @@
+
+ipset destroy
+{%for list in firewall_blocklists %}
+ipset -N {{ list.name }} {{ list.type }} hashsize 4096
+{% endfor %}
+
+#1 Create the chain and add the DROP rule to ip
+iptables -N blocked_traffic
+iptables -A blocked_traffic -j LOG --log-level 7 --log-prefix "Drop Bad IP List" -m limit --limit 15/minute
+iptables -A blocked_traffic -j DROP
+#2 Create the rules in the INPUT chain to check for incoming traffic
+# that matches the sets
+{% for list in firewall_blocklists %}
+iptables -I INPUT -m set --match-set {{ list.name }} src -j blocked_traffic
+{% endfor %}
+
+
+# add the ips/networks to the lists
+{% for list in firewall_blocklists %}
+while read ip{{ loop.index }}
+do
+    ipset -A {{ list.name }} $ip{{ loop.index }}
+done < /etc/firewall-{{ list.name }}.txt | sort | uniq
+{% endfor %}
+
+# Add badips
+{% if firewall_block_badips %}
+ipset -N badips hash:ip family inet hashsize 8192 maxelem 65536
+iptables -I INPUT -m set --match-set badips src -j blocked_traffic
+if [ -f {{ firewall_badips_db }} ]; then
+ipset restore < {{ firewall_badips_db }}
+fi
+{% endif %}
+
+

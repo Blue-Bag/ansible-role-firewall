@@ -7,11 +7,29 @@
   apt: pkg=iptables state=installed
   when: ansible_os_family == 'Debian'
 
+- include: badips.yml
+  when: firewall_block_badips
+
+- include: ipset.yml
+  when: firewall_ipset
+
 - name: Flush iptables the first time playbook runs.
   command: iptables -F creates=/etc/init.d/firewall
 
 - name: Copy firewall script into place.
   template: src=firewall.bash.j2 dest=/etc/firewall.bash owner=root group=root mode=0744
+  when: firewall_mode == 'simple'
+  notify: restart firewall
+
+# note this needs the fetchlistfromdict filter plugin to work
+- name: Setfact for allowed ips list for chain script
+  set_fact:
+    firewall_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
+  when: firewall_mode == 'chain' and firewall_whitelistgroup is defined
+
+- name: Copy firewall chain script into place.
+  template: src=firewall-chain.bash.j2 dest=/etc/firewall.bash owner=root group=root mode=0744
+  when: firewall_mode == 'chain'
   notify: restart firewall
 
 - name: Copy firewall init script into place.
@@ -19,7 +37,7 @@
 
 - name: Ensure the firewall is enabled and will start on boot.
   service: name=firewall state=started enabled=yes
-  
+
 - name: save iptables
   shell: iptables-save > /etc/iptables.up.rules
-  sudo: true
+  become: true
