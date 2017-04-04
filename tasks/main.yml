@@ -34,7 +34,7 @@
   template:
     src: firewall-chain.bash.j2
     dest: /etc/firewall.bash
-     owner: root
+    owner: root
     group: root
     mode: 0744
   when: firewall_mode == 'chain'
