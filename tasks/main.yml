@@ -49,6 +49,28 @@
     mode: 0755
   when: "ansible_service_mgr != 'systemd'"
 
+
+- block:
+     - name: check for old firewall service
+       register: oldfirewall
+       stat: path=/etc/init.d/firewall
+
+     - name: Remove old firewall service script
+       file:
+         path: /etc/init.d/firewall
+         state: absent
+       when: oldfirewall.stat.exists
+
+     - name: stop the old firewall
+       service:
+         name: firewall
+         state: stopped
+         enabled: False
+       when: oldfirewall.stat.exists
+  when: "ansible_service_mgr == 'systemd'"
+  become: true
+  become_user: root
+
 - name: Copy firewall systemd unit file into place (for systemd systems).
   template:
     src: firewall.unit.j2
