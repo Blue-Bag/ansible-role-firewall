@@ -3,10 +3,10 @@
   package: name=iptables state=installed
 
 
-- include: badips.yml
+- import_tasks: badips.yml
   when: firewall_block_badips
 
-- include: ipset.yml
+- import_tasks: ipset.yml
   when: firewall_ipset
 
 - name: Flush iptables the first time playbook runs.
