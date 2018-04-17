@@ -1,14 +1,14 @@
 ---
 
 - name: Ensure ipset is installed (Debian).
-  apt: pkg=ipset state=installed
+  apt: pkg=ipset state=present
   when: ansible_os_family == 'Debian'
 
 
 - name: Ensure ipset packages are installed (RedHat).
   yum:
     name: "ipset"
-    state: installed
+    state: present
     enablerepo: "{{ php_enablerepo }}"
   when: ansible_os_family == 'RedHat'
 
