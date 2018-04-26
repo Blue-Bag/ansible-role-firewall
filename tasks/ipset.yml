@@ -22,3 +22,13 @@
     mode: 0644
   with_items: "{{firewall_blocklists}}"
   notify: restart firewall
+
+- name: Copy firewall script into place.
+  template:
+    src: firewall-upd8ipset.sh
+    dest: /etc/firewall-upd8ipset.sh
+    owner: root
+    group: root
+    mode: 0744
+  when: firewall_mode == 'chain'
+  notify: restart firewall
