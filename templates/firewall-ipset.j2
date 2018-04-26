@@ -1,8 +1,54 @@
+IPCMD=$(command -v ipset)
 
-ipset destroy
+#The timeout setting should be at more the freq if running this script§
+# 7 days = 604800
+# 1 month  2592000
+# 24 days 2073600
+# current max is 24 days - see https://marc.info/?l=netfilter-devel&m=141337202317570&w=2
+TIMEOUT=2073600
+
+
+# Create an ipset table
+function createIPSET {
+  IPSET=$1
+  IPTYP=$2
+  # check if the IP list exists
+  if ! "$IPCMD" list "$IPSET" -name >/dev/null 2>&1
+  then
+    ipset_exists=false
+  else
+    # if it does exist check it uses the timeouts
+
+    "$IPCMD" list "$IPSET" | grep -E '^Header: family inet.*timeout.([0-9]*)$'
+
+    RESULT=$?   # grep will return 0 if it finds 'failure',  non-zero if it didn't
+
+    if [ $RESULT -eq 0 ];then
+     # ipset_timeout=true
+      ipset_exists=true
+    else
+     # ipset_timeout=false
+      echo "Destroying existing ipset as no timeout"
+      $IPCMD destroy "$IPSET"
+      ipset_exists=false
+    fi
+    #ipset_exists=true
+  fi
+
+if [ "$ipset_exists" == "false" ];then
+ echo "Create $IPSET"
+ $IPCMD create "$IPSET" "$IPTYP" hashsize 4096 timeout "$TIMEOUT" -exist || { echo "$0: Unable to create ipset: $IPSET" >&2; exit 2; }
+else
+  echo "$IPSET exists and is timeout compatable"
+fi
+
+}
+
+# call the createIPSET function for each list
 {%for list in firewall_blocklists %}
-ipset -N {{ list.name }} {{ list.type }} hashsize 4096
+createIPSET "{{ list.name }}" "{{ list.type }}"
 {% endfor %}
+
 
 #1 Create the chain and add the DROP rule to ip
 iptables -N blocked_traffic
@@ -14,14 +60,31 @@ iptables -A blocked_traffic -j DROP
 iptables -I INPUT -m set --match-set {{ list.name }} src -j blocked_traffic
 {% endfor %}
 
+# resd in the iplists
+function readIPLIST {
+  SRC=$1
+  IPSET=$2
+
+if [ ! -f "$SRC" ]; then
+    echo "Input IPLIST File not found!: $SRC"
+    exit 1
+fi
+
+
 
 # add the ips/networks to the lists
-{% for list in firewall_blocklists %}
-while read ip{{ loop.index }}
+while read _ip
 do
-    ipset -A {{ list.name }} $ip{{ loop.index }}
-done < /etc/firewall-{{ list.name }}.txt | sort | uniq
+    #ipset -A blocked-nets $ip1
+    $IPCMD add $IPSET $_ip timeout $TIMEOUT -exist || { echo "$0: Unable to add $_ip to $IPSET, exiting early." >&2; exit 2; }
+done < $SRC | sort | uniq
+
+}
+
+{% for list in firewall_blocklists %}
+readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}"
 {% endfor %}
+
 
 # Add badips
 {% if firewall_block_badips %}
