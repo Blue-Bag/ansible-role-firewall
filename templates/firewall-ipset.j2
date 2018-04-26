@@ -60,29 +60,47 @@ iptables -A blocked_traffic -j DROP
 iptables -I INPUT -m set --match-set {{ list.name }} src -j blocked_traffic
 {% endfor %}
 
-# resd in the iplists
+# read in the iplists
 function readIPLIST {
   SRC=$1
   IPSET=$2
+  IPTYPE=$3
 
 if [ ! -f "$SRC" ]; then
     echo "Input IPLIST File not found!: $SRC"
     exit 1
 fi
 
+if [$IPTYPE === "hash:ip"]; then
+# removing invalid ips from file
+#sed -rn -i.bak '/^([0-9]{1,3}\.){3}[0-9]{1,3}/!d' $SRC
+ sed -ri '/^([0-9]{1,3}\.){3}[0-9]{1,3}/!d' $SRC
+fi
 
+# clean the list of spaces
+ sed -i 's/^[ \t]*//;s/[ \t]*$//' $SRC
 
-# add the ips/networks to the lists
-while read _ip
-do
+# remove blank lines
+ sed -i '/^$/d' $SRC
+
+#build a restore list
+sed "s/.*/add $IPSET & timeout $TIMEOUT -exist/" $SRC > $IPSET-restore
+
+#restore the list
+ipset restore < $IPSET-restore
+
+# add the ips/networks to the list
+#while read _ip
+#do
     #ipset -A blocked-nets $ip1
-    $IPCMD add $IPSET $_ip timeout $TIMEOUT -exist || { echo "$0: Unable to add $_ip to $IPSET, exiting early." >&2; exit 2; }
-done < $SRC | sort | uniq
+ #   $IPCMD add $IPSET $_ip timeout $TIMEOUT -exist || { echo "$0: Unable to add $_ip to $IPSET, exiting early." >&2; exit 2; }
+#echo "adding $_ip"
+#done < $SRC | sort | uniq
 
 }
 
 {% for list in firewall_blocklists %}
-readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}"
+readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}"
 {% endfor %}
 
 
