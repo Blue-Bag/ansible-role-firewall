@@ -71,23 +71,23 @@ if [ ! -f "$SRC" ]; then
     exit 1
 fi
 
-if [$IPTYPE === "hash:ip"]; then
+if [ "$IPTYPE" = "hash:ip" ]; then
 # removing invalid ips from file
 #sed -rn -i.bak '/^([0-9]{1,3}\.){3}[0-9]{1,3}/!d' $SRC
- sed -ri '/^([0-9]{1,3}\.){3}[0-9]{1,3}/!d' $SRC
+ sed -ri '/^([0-9]{1,3}\.){3}[0-9]{1,3}/!d' "$SRC"
 fi
 
 # clean the list of spaces
- sed -i 's/^[ \t]*//;s/[ \t]*$//' $SRC
+ sed -i 's/^[ \t]*//;s/[ \t]*$//' "$SRC"
 
 # remove blank lines
  sed -i '/^$/d' $SRC
 
 #build a restore list
-sed "s/.*/add $IPSET & timeout $TIMEOUT -exist/" $SRC > $IPSET-restore
+sed "s/.*/add $IPSET & timeout $TIMEOUT -exist/" "$SRC" > "$IPSET-restore"
 
 #restore the list
-ipset restore < $IPSET-restore
+$IPCMD restore < "$IPSET-restore"
 
 # add the ips/networks to the list
 #while read _ip
