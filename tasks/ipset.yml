@@ -23,10 +23,10 @@
   with_items: "{{firewall_blocklists}}"
   notify: restart firewall
 
-- name: Copy firewall script into place.
+- name: Copy firewall ipset script into place.
   template:
-    src: firewall-upd8ipset.sh
-    dest: /etc/firewall-upd8ipset.sh
+    src: 'firewall-upd8ipset.sh.j2'
+    dest: "/etc/firewall-upd8ipset.sh"
     owner: root
     group: root
     mode: 0744
