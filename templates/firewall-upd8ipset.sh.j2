@@ -17,6 +17,7 @@ TIMEOUT=2073600
 function readIPLIST {
   SRC=$1
   IPSET=$2
+  IPTYPE=$3
 
 if [ ! -f "$SRC" ]; then
     echo "Input IPLIST File not found!: $SRC"
@@ -24,21 +25,22 @@ if [ ! -f "$SRC" ]; then
 fi
 
 
+if [ "$IPTYPE" = "hash:ip" ]; then
 # removing invalid ips from file
 #sed -rn -i.bak '/^([0-9]{1,3}\.){3}[0-9]{1,3}/!d' $SRC
-sed -ri '/^([0-9]{1,3}\.){3}[0-9]{1,3}/!d' $SRC
-
+ sed -ri '/^([0-9]{1,3}\.){3}[0-9]{1,3}/!d' "$SRC"
+fi
 # clean the list of spaces
-sed -i 's/^[ \t]*//;s/[ \t]*$//' $SRC
+sed -i 's/^[ \t]*//;s/[ \t]*$//' "$SRC"
 
 # remove blank lines
-sed -i '/^$/d' $SRC
+sed -i '/^$/d' "$SRC"
 
 #build a restore list
-sed "s/.*/add blocked-ips & timeout $TIMEOUT -exist/" $SRC > $IPSET-restore
+sed "s/.*/add $IPSET & timeout $TIMEOUT -exist/" "$SRC" > "$IPSET-restore"
 
 #restore the list
-ipset restore < $IPSET-restore
+$IPCMD restore < "$IPSET-restore"
 
 # add the ips/networks to the list
 #while read _ip
@@ -51,4 +53,6 @@ ipset restore < $IPSET-restore
 }
 
 
-readIPLIST "/etc/firewall-blocked-ips.txt" "blocked-ips"
+{% for list in firewall_blocklists %}
+readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}"
+{% endfor %}
