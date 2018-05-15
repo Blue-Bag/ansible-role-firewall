@@ -71,7 +71,7 @@ iptables -N IP_Add2bannedhosts
 iptables -A IP_Add2bannedhosts -j SET --add-set {{ firewall_reban_list }} src --exist
 # match src against banned hosts lists
 iptables -I INPUT -m set --match-set {{ firewall_reban_list }} src -j blocked_traffic
-{% end if %}
+{% endif %}
 
 
 # read in the iplists
