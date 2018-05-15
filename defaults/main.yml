@@ -98,6 +98,9 @@ firewall_allow_ping: true
 
 # ========================  ipset
 firewall_ipset: False
+firewall_reban_hosts: yes
+firewall_ipset_timeout: 2073600
+
 #Create lists, for network blocks and single IP addresses
 #hash:net = Networks
 #hash:ip = single IPs
@@ -105,14 +108,24 @@ firewall_blocklists:
   - {
       name: blocked-nets,
       type: 'hash:net',
-      src: 'blocked-nets.txt'
+      src: 'blocked-nets.txt',
+      persist: yes,
+      timeout: "{{ firewall_ipset_timeout }}"
   }
   - {
       name: blocked-ips,
       type: 'hash:ip',
-      src: 'blocked-ips.txt'
+      src: 'blocked-ips.txt',
+      persist: yes,
+      timeout: "{{ firewall_ipset_timeout }}"
   }
-
+  # - {
+  #     name: banned-hosts,
+  #     type: 'hash:ip',
+  #     src: '',
+  #     persist: no,
+  #     timeout: '604800'
+  # }
 # ======================= repo for Redhat ipset
 # Pass in a comma-separated list of repos to use (e.g. "remi,epel").
 php_enablerepo: "epel"
