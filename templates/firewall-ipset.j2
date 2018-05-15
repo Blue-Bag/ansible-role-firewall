@@ -12,6 +12,7 @@ TIMEOUT=2073600
 function createIPSET {
   IPSET=$1
   IPTYP=$2
+  IPTME=$3
   # check if the IP list exists
   if ! "$IPCMD" list "$IPSET" -name >/dev/null 2>&1
   then
@@ -37,7 +38,7 @@ function createIPSET {
 
 if [ "$ipset_exists" == "false" ];then
  echo "Create $IPSET"
- $IPCMD create "$IPSET" "$IPTYP" hashsize 4096 timeout "$TIMEOUT" -exist || { echo "$0: Unable to create ipset: $IPSET" >&2; exit 2; }
+ $IPCMD create "$IPSET" "$IPTYP" hashsize 4096 timeout "$IPTME" -exist || { echo "$0: Unable to create ipset: $IPSET" >&2; exit 2; }
 else
   echo "$IPSET exists and is timeout compatable"
 fi
@@ -46,7 +47,7 @@ fi
 
 # call the createIPSET function for each list
 {%for list in firewall_blocklists %}
-createIPSET "{{ list.name }}" "{{ list.type }}"
+createIPSET "{{ list.name }}" "{{ list.type }}" "{{ list.timeout | default(2073600)}}"
 {% endfor %}
 
 
@@ -60,12 +61,25 @@ iptables -A blocked_traffic -j DROP
 iptables -I INPUT -m set --match-set {{ list.name }} src -j blocked_traffic
 {% endfor %}
 
+
+# if we see a banned ip add to the recently banned list with a timeout
+{% if firewall_reban_hosts %}
+# create an ipset for the rebanned hosts
+createIPSET "{{ firewall_reban_list }}" "hash:ip" "604800"
+# create a chain to add to the list
+iptables -N IP_Add2bannedhosts
+iptables -A IP_Add2bannedhosts -j SET --add-set {{ firewall_reban_list }} src --exist
+# match src against banned hosts lists
+iptables -I INPUT -m set --match-set {{ firewall_reban_list }} src -j blocked_traffic
+{% end if %}
+
+
 # read in the iplists
 function readIPLIST {
   SRC=$1
   IPSET=$2
   IPTYPE=$3
-
+  IPTME=$4
 if [ ! -f "$SRC" ]; then
     echo "Input IPLIST File not found!: $SRC"
     exit 1
@@ -84,7 +98,7 @@ fi
  sed -i '/^$/d' $SRC
 
 #build a restore list
-sed "s/.*/add $IPSET & timeout $TIMEOUT -exist/" "$SRC" > "$IPSET-restore"
+sed "s/.*/add $IPSET & timeout $IPTME -exist/" "$SRC" > "$IPSET-restore"
 
 #restore the list
 $IPCMD restore < "$IPSET-restore"
@@ -99,8 +113,8 @@ $IPCMD restore < "$IPSET-restore"
 
 }
 
-{% for list in firewall_blocklists %}
-readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}"
+{% for list in firewall_blocklists if list.persist %}
+readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}" "{{ list.timeout }}"
 {% endfor %}
 
 

@@ -92,9 +92,15 @@ iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --s
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Blacklist
 {% else %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "{{ chain.name }} Attempt"
+{% if firewall_ipset and firewall_reban_hosts %}
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j IP_Add2bannedhosts
+{% end if %}
 {% endif %}
 {% if chain.ratelimit is defined %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --seconds {{ chain.hit_ttl|default(60) }} --hitcount {{ chain.hitcount|default(4) }} --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "Anti {{ chain.name }}-Bruteforce: " --log-level 6
+{% if firewall_ipset and firewall_reban_hosts %}
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --seconds {{ chain.hit_ttl|default(60) }} --hitcount {{ chain.hitcount|default(4) }} --rttl --name {{ chain.name }} --rsource -j IP_Add2bannedhosts
+{% end if %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --seconds {{ chain.hit_ttl|default(60) }} --hitcount {{ chain.hitcount|default(4) }} --rttl --name {{ chain.name }} --rsource -j DROP
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j {{ chain.default }}
 {% else %}
