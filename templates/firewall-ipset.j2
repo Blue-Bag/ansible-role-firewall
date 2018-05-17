@@ -1,11 +1,11 @@
 IPCMD=$(command -v ipset)
 
-#The timeout setting should be at more the freq if running this script§
+#The timeout setting should be more than the freq of running this script
 # 7 days = 604800
 # 1 month  2592000
 # 24 days 2073600
 # current max is 24 days - see https://marc.info/?l=netfilter-devel&m=141337202317570&w=2
-TIMEOUT=2073600
+TIMEOUT={{ firewall_ipset_timeout }}
 
 
 # Create an ipset table
@@ -53,7 +53,7 @@ createIPSET "{{ list.name }}" "{{ list.type }}" "{{ list.timeout | default(20736
 
 #1 Create the chain and add the DROP rule to ip
 iptables -N blocked_traffic
-iptables -A blocked_traffic -j LOG --log-level 7 --log-prefix "Drop Bad IP List" -m limit --limit 15/minute
+iptables -A blocked_traffic -j LOG  --log-level {{ firewall_log_level }} --log-prefix "iptables[Bad IP]: " -m limit --limit 15/minute
 iptables -A blocked_traffic -j DROP
 #2 Create the rules in the INPUT chain to check for incoming traffic
 # that matches the sets
