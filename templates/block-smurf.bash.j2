@@ -2,8 +2,13 @@
 # http://newartisans.com/2007/09/neat-tricks-with-iptables/
 iptables -A INPUT -p icmp -m icmp --icmp-type address-mask-request -j DROP
 iptables -A INPUT -p icmp -m icmp --icmp-type timestamp-request -j DROP
-iptables -A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit 1/second -j ACCEPT
+
+#iptables -A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit 1/second -j ACCEPT
 
 
 # Drop excessive RST packets to avoid smurf attacks
 iptables -A INPUT -p tcp -m tcp --tcp-flags RST RST -m limit --limit 2/second --limit-burst 2 -j ACCEPT
+
+
+
+

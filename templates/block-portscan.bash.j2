@@ -8,8 +8,8 @@ iptables -A INPUT   -m recent --name portscan --remove
 iptables -A FORWARD -m recent --name portscan --remove
 
 # These rules add scanners to the portscan list, and log the attempt.
-iptables -A INPUT   -p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix "Portscan:"
+iptables -A INPUT   -p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix "iptables[Portscan]: "
 iptables -A INPUT   -p tcp -m tcp --dport 139 -m recent --name portscan --set -j DROP
 
-iptables -A FORWARD -p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix "Portscan:"
+iptables -A FORWARD -p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix "iptables[Portscan]: "
 iptables -A FORWARD -p tcp -m tcp --dport 139 -m recent --name portscan --set -j DROP
