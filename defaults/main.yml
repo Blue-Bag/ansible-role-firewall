@@ -9,6 +9,10 @@ firewall_allowed_tcp_ports:
   - "80"
   - "443"
 
+firewall_ipv6: yes
+# don't put ssh in here as we treat that separately
+firewall_allowed_tcp_ports_ip6: []
+
 # allow mail port out
 firewall_allowed_tcp_ports_out:
   - "25"
