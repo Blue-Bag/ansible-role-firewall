@@ -45,6 +45,21 @@ iptables -X
 # Accept traffic from loopback interface (localhost).
 iptables -A INPUT -i lo -j ACCEPT
 
+# Continue connections that are already established or related to an established
+# connection.
+iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+# see https://unix.stackexchange.com/questions/108169/what-is-the-difference-between-m-conntrack-ctstate-and-m-state-state
+# for discussion on state vs conntrack
+# Allow established connections:
+# iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+###############################################################################
+# 1. Whitelists and IPSETs                                                    #
+#                                                                             #
+# SEt up whitellists and block lists before we do any accepting and blocking  #
+###############################################################################
+
+
 {% if firewall_ipset %}
 {% include 'firewall-ipset.j2' %}
 {% endif %}
@@ -58,6 +73,19 @@ iptables -I IP_WTWhitelist -s {{ wl.ip }} -j ACCEPT
 
 iptables -I INPUT -p tcp -m tcp  -m state --state NEW -j IP_WTWhitelist
 
+###############################################################################
+# 2. General Rules                                                            #
+#                                                                             #
+# This section is a generic header that should be suitable for most hosts.    #
+###############################################################################
+
+
+# Drop all packets that are going to broadcast, multicast or anycast address.
+iptables -A INPUT -m addrtype --dst-type BROADCAST -j DROP
+iptables -A INPUT -m addrtype --dst-type MULTICAST -j DROP
+iptables -A INPUT -m addrtype --dst-type ANYCAST -j DROP
+iptables -A INPUT -d 224.0.0.0/4 -j DROP
+
 # Forwarded ports.
 {# Add a rule for each forwarded port #}
 {% for forwarded_port in firewall_forwarded_tcp_ports %}
@@ -69,6 +97,11 @@ iptables -t nat -I PREROUTING -p udp --dport {{ forwarded_port.src }} -j REDIREC
 iptables -t nat -I OUTPUT -p udp -o lo --dport {{ forwarded_port.src }} -j REDIRECT --to-port {{ forwarded_port.dest }}
 {% endfor %}
 
+###############################################################################
+# 3. Chains                                                                   #
+#                                                                             #
+# This section sets up protected port chains.                                 #
+###############################################################################
 # Create Chains.
 {% for chain in firewall_protected_chains %}
 iptables -N {{ chain.name }}
@@ -91,13 +124,13 @@ iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --s
 {% if chain.default == 'ACCEPT'  %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Blacklist
 {% else %}
-iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "{{ chain.name }} Attempt"
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "iptables[{{ chain.name }} Attempt]" --log-level {{ firewall_log_level }}
 {% if firewall_ipset and firewall_reban_hosts %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j IP_Add2bannedhosts
 {% endif %}
 {% endif %}
 {% if chain.ratelimit is defined %}
-iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --seconds {{ chain.hit_ttl|default(60) }} --hitcount {{ chain.hitcount|default(4) }} --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "Anti {{ chain.name }}-Bruteforce: " --log-level 6
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --seconds {{ chain.hit_ttl|default(60) }} --hitcount {{ chain.hitcount|default(4) }} --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "iptables[Anti {{ chain.name }}-Bruteforce]: " --log-level {{ firewall_log_level }}
 {% if firewall_ipset and firewall_reban_hosts %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --seconds {{ chain.hit_ttl|default(60) }} --hitcount {{ chain.hitcount|default(4) }} --rttl --name {{ chain.name }} --rsource -j IP_Add2bannedhosts
 {% endif %}
@@ -112,7 +145,7 @@ iptables -A {{ chain.name }} -p tcp --dport {{ chain.port }} -m state --state NE
 # not going to get here as chain is already NEW
 iptables -A {{ chain.name }} -m state --state RELATED,ESTABLISHED -m limit --limit {{ chain.ddos_rate }} --limit-burst {{ chain.ddos_burst }} -j ACCEPT
 # log blocked packets
-iptables -A {{ chain.name }} -j LOG -p tcp --dport 80 -m state --state NEW --log-prefix 'TCP {{ chain.port }} Burst Exhausted'
+iptables -A {{ chain.name }} -j LOG -p tcp --dport 80 -m state --state NEW --log-prefix 'iptables[TCP {{ chain.port }} Burst Exhausted]: ' --log-level {{ firewall_log_level }}
 # block packets
 iptables -A {{ chain.name }} -j REJECT
 {% else %}
@@ -139,21 +172,36 @@ iptables -A IP_Blacklist -s {{ bl.ip }} -p tcp -m tcp -m state --state NEW -j IP
 {% endfor %}
 
 #Create Blacklist log
-iptables -A IP_BlacklistLOG -p tcp -m tcp  -m state --state NEW -m recent --update --rttl  --rsource -j LOG --log-level 7 --log-prefix "BL Attempt"
+iptables -A IP_BlacklistLOG -p tcp -m tcp  -m state --state NEW -m recent --update --rttl  --rsource -j LOG  --log-prefix "iptables[BL Attempt]: " --log-level {{ firewall_log_level }}
 iptables -A IP_BlacklistLOG -p tcp -m tcp  -m state --state NEW -j DROP
+
+
+###############################################################################
+# 4. Security                                                                 #
+#                                                                             #
+# This section sets up specific security                                      #
+###############################################################################
 
 
 {% for port in firewall_allowed_udp_ports %}
 iptables -A INPUT -p udp -m udp --dport {{ port }} -j ACCEPT
 {% endfor %}
 
-{% if firewall_allow_ping %}
-# Accept icmp ping requests.
-#iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
-iptables -A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit {{ firewall_allow_ping_limit|default('1/second') }} -j ACCEPT
-{% else %}
-# Don't allow pings through
-iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j DROP
+{% if firewall_extra_security %}
+{% include 'firewall-icmp.bash.j2' %}
+{% include 'block-misc.bash.j2' %}
+
+  {% if firewall_block_portscan %}
+{% include 'block-portscan.bash.j2' %}
+  {% endif %}
+
+  {% if firewall_block_spoofed %}
+{% include 'block-spoofed.bash.j2' %}
+  {% endif %}
+
+  {% if firewall_block_smurf %}
+{% include 'block-smurf.bash.j2' %}
+  {% endif %}
 {% endif %}
 
 # Allow NTP traffic for time synchronization.
@@ -165,75 +213,34 @@ iptables -A INPUT -p udp --sport 123 -j ACCEPT
 {{ rule }}
 {% endfor %}
 
-{% if firewall_extra_security %}
-  {% if firewall_block_portscan %}
-{% include 'block-portscan.j2' %}
-  {% endif %}
 
-  {% if firewall_block_spoofed %}
-{% include 'block-spoofed.j2' %}
-  {% endif %}
-
-  {% if firewall_block_smurf %}
-{% include 'block-smurf.j2' %}
-  {% endif %}
-{% endif %}
-
-# Allow established connections:
-iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+###############################################################################
+# 5. Logging                                                                  #
+#                                                                             #
+# This section sets up logging                                                #
+###############################################################################
 
 # Log EVERYTHING (ONLY for Debug).
 # iptables -A INPUT -j LOG
+{% if firewall_log_dropped_packets %}
+# Log other incoming requests (all of which are dropped) at 15/minute max.
+# Prevent DOS by filling log files.
+iptables -A INPUT -m limit --limit 1/second --limit-burst 100 -j LOG --log-prefix "iptables[DOS]: " --log-level {{ firewall_log_level }}
 
 # Log other incoming requests (all of which are dropped) at 15/minute max.
-iptables -A INPUT -m limit --limit 15/minute -j LOG --log-level 7 --log-prefix "Dropped by firewall: "
+iptables -A INPUT -m limit --limit 15/minute -j LOG --log-prefix "iptables[In Dropped]: " --log-level {{ firewall_log_level }}
+{% endif %}
+
 
 # Drop all other traffic.
 iptables -A INPUT -j DROP
 
-# Configure IPv6 if ip6tables is present.
-if [ -x "$(which ip6tables 2>/dev/null)" ]; then
+{% if firewall_ipv6 %}
+{% include 'firewall-ipv6.bash.j2' %}
+{% endif %}
 
-  # Remove all rules and chains.
-  ip6tables -F
-  ip6tables -X
 
-  # Accept traffic from loopback interface (localhost).
-  ip6tables -A INPUT -i lo -j ACCEPT
 
-  # Open ports.
-  {# Add a rule for each open port #}
-  {% for port in firewall_allowed_tcp_ports %}
-  ip6tables -A INPUT -p tcp -m tcp --dport {{ port }} -j ACCEPT
-  {% endfor %}
-  {% for port in firewall_allowed_udp_ports %}
-  ip6tables -A INPUT -p udp -m udp --dport {{ port }} -j ACCEPT
-  {% endfor %}
 
-  # Accept icmp ping requests.
-  ip6tables -A INPUT -p icmp -j ACCEPT
 
-  # Allow NTP traffic for time synchronization.
-  ip6tables -A OUTPUT -p udp --dport 123 -j ACCEPT
-  ip6tables -A INPUT -p udp --sport 123 -j ACCEPT
 
-  # Additional custom rules.
-  {% for rule in firewall_ip6_additional_rules %}
-  {{ rule }}
-  {% endfor %}
-
-  # Allow established connections:
-  ip6tables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-
-  # Log EVERYTHING (ONLY for Debug).
-  # ip6tables -A INPUT -j LOG
-
-  {% if firewall_log_dropped_packets %}
-  # Log other incoming requests (all of which are dropped) at 15/minute max.
-  ip6tables -A INPUT -m limit --limit 15/minute -j LOG --log-level 7 --log-prefix "Dropped by firewall: "
-  {% endif %}
-
-  # Drop all other traffic.
-  ip6tables -A INPUT -j DROP
-
-fi
