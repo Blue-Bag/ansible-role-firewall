@@ -21,7 +21,8 @@ if [ -x "$(which ip6tables 2>/dev/null)" ]; then
 # Set up default policies
   ip6tables -P INPUT DROP
   ip6tables -P FORWARD DROP
-  ip6tables -P OUTPUT DROP
+# some services like reCaptcha will use IPv6 so allow output or whitelist
+  ip6tables -P OUTPUT ACCEPT
 
 
 # Accept traffic from loopback interface (localhost).
