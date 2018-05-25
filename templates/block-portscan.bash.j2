@@ -13,3 +13,10 @@ iptables -A INPUT   -p tcp -m tcp --dport 139 -m recent --name portscan --set -j
 
 iptables -A FORWARD -p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix "iptables[Portscan]: "
 iptables -A FORWARD -p tcp -m tcp --dport 139 -m recent --name portscan --set -j DROP
+
+
+# https://www.ossramblings.com/using_iptables_rate_limiting_to_prevent_portscans
+# iptables -A INPUT -p tcp -i eth0 -m state --state NEW -m recent --set
+# iptables -A INPUT -p tcp -i eth0 -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
+# iptables -A FORWARD -p tcp -i eth0 -m state --state NEW -m recent --set
+# iptables -A FORWARD -p tcp -i eth0 -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
