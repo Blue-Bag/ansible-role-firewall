@@ -2,12 +2,7 @@
 #################   Cloudflare Whitelist #####################
 # it is possible that CF ip ranges may change so we could create a timeout list
 # for now we creat a simple list
-
-# Create a IPSET for the cloudflare whitelist
-if ! "$IPCMD" list {{ firewall_cf_ipset }} -name >/dev/null 2>&1
-  then
-    "$IPCMD" create {{ firewall_cf_ipset }} hash:net
-fi
+createIPSET "{{ firewall_cf_ipset }}" "hash:net"
 
 # Now populate the set with Cloudflare IP ranges:
 for x in $(curl https://www.cloudflare.com/ips-v4); do "$IPCMD" add {{ firewall_cf_ipset }} $x; done
