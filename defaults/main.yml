@@ -162,3 +162,7 @@ firewall_badips_ipset: 'badips'
 firewall_badips_folder: '/usr/share/badips'
 firewall_badips_db: '/usr/share/badips/badips.db'
 
+# =======================  Cloudflare
+firewall_whitelist_cf: no
+firewall_cf_ipset: 'whitelist_cf'
+
