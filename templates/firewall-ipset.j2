@@ -8,8 +8,21 @@ IPCMD=$(command -v ipset)
 TIMEOUT={{ firewall_ipset_timeout }}
 
 
-# Create an ipset table
+# simple ipset create
 function createIPSET {
+  IPSET=$1
+  IPTYP=$2
+
+  if ! "$IPCMD" list "$IPSET" -name >/dev/null 2>&1
+  then
+      "$IPCMD" create "$IPSET" "$IPTYP" hashsize 4096
+  fi
+
+}
+
+
+# Create an ipset table with timeout
+function createIPSETTimeout {
   IPSET=$1
   IPTYP=$2
   IPTME=$3
@@ -45,6 +58,13 @@ fi
 
 }
 
+
+{% if firewall_whitelist_cf %}
+{% include 'firewall-ipset-cf.j2' %}
+{% endif %}
+
+
+# Ipsets for blocklists
 # call the createIPSET function for each list
 {%for list in firewall_blocklists %}
 createIPSET "{{ list.name }}" "{{ list.type }}" "{{ list.timeout | default(2073600)}}"
