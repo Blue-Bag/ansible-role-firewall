@@ -47,8 +47,11 @@ firewall_disable_ufw: false
 
 
 # =======================   chain config
+
 firewall_whitelist:
   - { name: 'local', ip: "192.168.100.1" }
+
+firewall_whitelist_ipset: 'whitelist_wwl'
 
 #firewall_whitelistgroup: []
 
