@@ -1,0 +1,31 @@
+
+
+#################   Default Whitelist #####################
+
+{% if firewall_ipset %}
+
+createIPSET "{{ firewall_whitelist_ipset }}" "hash:ip"
+
+# Now populate the set with whitelisted IPs:
+
+{% for wl in firewall_whitelist %}
+"$IPCMD" add {{ firewall_whitelist_ipset }} {{ wl.ip }}
+{% endfor %}
+
+# Whitelist traffic
+iptables -A INPUT -m set --match-set {{ firewall_whitelist_ipset }} src -p tcp  -j ACCEPT
+
+{% else %}
+# create a whiter than white list chain
+iptables -N IP_WTWhitelist
+#Create whitelist
+{% for wl in firewall_whitelist %}
+iptables -I IP_WTWhitelist -s {{ wl.ip }} -j ACCEPT
+{% endfor %}
+
+iptables -I INPUT -p tcp -m tcp  -m state --state NEW -j IP_WTWhitelist
+
+
+{% endif %}
+
+##################  end WWL whitelisting #######################

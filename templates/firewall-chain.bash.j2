@@ -56,22 +56,16 @@ iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 ###############################################################################
 # 1. Whitelists and IPSETs                                                    #
 #                                                                             #
-# SEt up whitellists and block lists before we do any accepting and blocking  #
+# Set up whitellists and block lists before we do any accepting and blocking  #
 ###############################################################################
-
 
 {% if firewall_ipset %}
 {% include 'firewall-ipset.j2' %}
 {% endif %}
 
-# create a whiter than white list
-iptables -N IP_WTWhitelist
-#Create whitelist
-{% for wl in firewall_whitelist %}
-iptables -I IP_WTWhitelist -s {{ wl.ip }} -j ACCEPT
-{% endfor %}
-
-iptables -I INPUT -p tcp -m tcp  -m state --state NEW -j IP_WTWhitelist
+{% if firewall_whitelist is defined %}
+{% include 'firewall-whitelist.bash.j2' %}
+{% endif %}
 
 ###############################################################################
 # 2. General Rules                                                            #
