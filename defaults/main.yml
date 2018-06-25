@@ -1,6 +1,7 @@
 ---
 # firewall mode [simple | chain ]
 firewall_mode: simple
+firewall_backup_cfg: no
 
 # =======================   simple config
 firewall_allowed_tcp_ports:

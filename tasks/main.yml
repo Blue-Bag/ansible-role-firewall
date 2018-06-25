@@ -21,6 +21,7 @@
     owner: root
     group: root
     mode: 0744
+    backup: "{{firewall_backup_cfg}}"
   when: firewall_mode == 'simple'
   notify: restart firewall
 
@@ -37,6 +38,7 @@
     owner: root
     group: root
     mode: 0744
+    backup: "{{firewall_backup_cfg}}"
   when: firewall_mode == 'chain'
   notify: restart firewall
 
