@@ -4,7 +4,12 @@
 
 {% if firewall_ipset %}
 
+$IPCMD destroy "{{ firewall_whitelist_ipset }}"
 createIPSET "{{ firewall_whitelist_ipset }}" "hash:ip"
+
+$IPCMD destroy "{{ firewall_whitelist_ipset }}-net"
+createIPSET "{{ firewall_whitelist_ipset }}-net" "hash:net"
+
 
 # Now populate the set with whitelisted IPs:
 
@@ -12,8 +17,13 @@ createIPSET "{{ firewall_whitelist_ipset }}" "hash:ip"
 "$IPCMD" add {{ firewall_whitelist_ipset }} {{ wl.ip }}
 {% endfor %}
 
+{% for wln in firewall_whitelist_net %}
+"$IPCMD" add {{ firewall_whitelist_ipset }}-net {{ wln.ip }}
+{% endfor %}
+
 # Whitelist traffic
 iptables -A INPUT -m set --match-set {{ firewall_whitelist_ipset }} src -p tcp  -j ACCEPT
+iptables -A INPUT -m set --match-set {{ firewall_whitelist_ipset }}-net src -p tcp  -j ACCEPT
 
 {% else %}
 # create a whiter than white list chain

@@ -22,7 +22,7 @@ function createIPSET {
 
 
 # Create an ipset table with timeout
-function createIPSETTimeout {
+function createIPSET-Timeout {
   IPSET=$1
   IPTYP=$2
   IPTME=$3
@@ -67,7 +67,7 @@ fi
 # Ipsets for blocklists
 # call the createIPSET function for each list
 {%for list in firewall_blocklists %}
-createIPSET "{{ list.name }}" "{{ list.type }}" "{{ list.timeout | default(2073600)}}"
+createIPSET-Timeout "{{ list.name }}" "{{ list.type }}" "{{ list.timeout | default(2073600)}}"
 {% endfor %}
 
 
@@ -85,7 +85,7 @@ iptables -I INPUT -m set --match-set {{ list.name }} src -j blocked_traffic
 # if we see a banned ip add to the recently banned list with a timeout
 {% if firewall_reban_hosts %}
 # create an ipset for the rebanned hosts
-createIPSET "{{ firewall_reban_list }}" "hash:ip" "604800"
+createIPSET-Timeout "{{ firewall_reban_list }}" "hash:ip" "604800"
 # create a chain to add to the list
 iptables -N IP_Add2bannedhosts
 iptables -A IP_Add2bannedhosts -j SET --add-set {{ firewall_reban_list }} src --exist
