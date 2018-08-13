@@ -13,6 +13,8 @@
   when: ansible_os_family == 'RedHat'
 
 
+## here we should run the get-blocklists so we don't maintain a list here
+
 - name: Put up the block lists
   copy:
     src: "{{ item.src }}"
