@@ -50,6 +50,7 @@ firewall_disable_ufw: false
 
 firewall_whitelist:
   - { name: 'local', ip: "192.168.100.1" }
+firewall_whitelist_net: []
 
 firewall_whitelist_ipset: 'whitelist_wwl'
 
