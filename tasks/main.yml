@@ -25,6 +25,11 @@
   when: firewall_mode == 'simple'
   notify: restart firewall
 
+- name: Show the list of inv_ip_list
+  debug:
+    msg: "{{ groups['remote'] |map('extract', hostvars, ['custom_facts','aliases','0','ip'])|list }}"
+ #   msg="{{ hostvars|fetchlistfromdict(groups['remote']) |map(attribute='custom_facts.aliases.0.ip')|list}}"
+
 # note this needs the fetchlistfromdict filter plugin to work
 - name: Setfact for allowed ips list for chain script
   set_fact:
