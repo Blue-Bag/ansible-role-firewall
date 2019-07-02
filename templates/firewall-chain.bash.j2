@@ -33,8 +33,8 @@ done
 fi
 
 # Completely reset the firewall by removing all rules and chains.
-iptables -P INPUT ACCEPT
-iptables -P FORWARD ACCEPT
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
 iptables -P OUTPUT ACCEPT
 iptables -t nat -F
 iptables -t mangle -F
@@ -61,12 +61,17 @@ iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 
 {% if firewall_ipset %}
 {% include 'firewall-ipset.j2' %}
-{% endif %}
-
+{% else %}
 {% if firewall_whitelist is defined %}
-{% include 'firewall-whitelist.bash.j2' %}
+# create a whiter than white list chain
+iptables -N IP_WTWhitelist
+#Create whitelist
+{% for wl in firewall_whitelist %}
+iptables -I IP_WTWhitelist -s {{ wl.ip }} -j ACCEPT
+{% endfor %}
+iptables -I INPUT -p tcp -m tcp  -m state --state NEW -j IP_WTWhitelist
 {% endif %}
-
+{% endif %}
 ###############################################################################
 # 2. General Rules                                                            #
 #                                                                             #
@@ -232,9 +237,3 @@ iptables -A INPUT -j DROP
 {% if firewall_ipv6 %}
 {% include 'firewall-ipv6.bash.j2' %}
 {% endif %}
-
-
-
-
-
-
