@@ -126,6 +126,8 @@ firewall_ipset_timeout: 2073600
 #Create lists, for network blocks and single IP addresses
 #hash:net = Networks
 #hash:ip = single IPs
+# if using a local job to update lists then
+# set these to your locally generated list
 firewall_blocklists:
   - {
       name: blocked-nets,
@@ -166,4 +168,3 @@ firewall_badips_db: '/usr/share/badips/badips.db'
 # =======================  Cloudflare
 firewall_whitelist_cf: no
 firewall_cf_ipset: 'whitelist_cf'
-
