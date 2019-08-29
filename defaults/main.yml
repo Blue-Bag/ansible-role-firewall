@@ -58,7 +58,7 @@ firewall_whitelist_net: []
 firewall_whitelist_ipset: 'whitelist_wwl'
 
 #firewall_whitelistgroup: []
-
+firewall_chain_wl: "{{ firewall_whitelist }}"
 
 firewall_blacklist:
   - { name: 'Some rogue', ip: "96.47.225.0/24" }

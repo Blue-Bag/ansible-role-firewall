@@ -25,16 +25,27 @@
   when: firewall_mode == 'simple'
   notify: restart firewall
 
-- name: Show the list of inv_ip_list
-  debug:
-    msg: "{{ groups['remote'] |map('extract', hostvars, ['custom_facts','aliases','0','ip'])|list }}"
+# - name: Show the list of inv_ip_list
+#   debug:
+#     msg: "{{ groups['remote'] |map('extract', hostvars, ['custom_facts','aliases','0','ip'])|list }}"
  #   msg="{{ hostvars|fetchlistfromdict(groups['remote']) |map(attribute='custom_facts.aliases.0.ip')|list}}"
-
+#{{ groups['remote'] |map('extract', hostvars, ['ansible_ssh_host'])|list }}
 # note this needs the fetchlistfromdict filter plugin to work
 - name: Setfact for allowed ips list for chain script
   set_fact:
-    firewall_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
+    group_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
   when: firewall_mode == 'chain' and firewall_whitelistgroup is defined
+
+- name: Setfact for allowed ips2 list for chain script
+  set_fact:
+    firewall_chain_whitelist: "{{ firewall_chain_wl|map(attribute='ip')|list|unique }}"
+  when: firewall_mode == 'chain' and firewall_whitelistgroup is defined
+
+- name: Create master whitelist for script
+  set_fact:
+    firewall_allowed_ips: "{{ group_allowed_ips | union(firewall_chain_whitelist | unique) }}"
+  when: firewall_mode == 'chain' and firewall_whitelistgroup is defined
+
 
 - name: Copy firewall chain script into place.
   template:

@@ -37,6 +37,8 @@ sed -i 's/^[ \t]*//;s/[ \t]*$//' $SRC
 sed -i '/^$/d' $SRC
 
 #build a restore list
+# Wrap line with 'add ipsetname' and 'timeout details'
+# sed "s/.*/PREFIX&SUFFIX/" FILE
 sed "s/.*/add $IPSET & timeout $TIMEOUT -exist/" $SRC > $IPSET-restore
 
 #restore the list
