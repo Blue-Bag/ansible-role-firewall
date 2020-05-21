@@ -3,6 +3,11 @@
 firewall_mode: simple
 firewall_backup_cfg: no
 
+firewall_state: started
+firewall_enabled_at_boot: true
+
+firewall_flush_rules_and_chains: true
+
 # =======================   simple config
 firewall_allowed_tcp_ports:
   - "22"
@@ -29,6 +34,7 @@ firewall_forwarded_udp_ports: []
 firewall_additional_rules: []
 
 firewall_ip6_additional_rules: []
+
 firewall_log_dropped_packets: true
 
 firewall_log_level: 4

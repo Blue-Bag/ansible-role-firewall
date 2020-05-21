@@ -32,6 +32,7 @@ echo 1 > $filter
 done
 fi
 
+{% if firewall_flush_rules_and_chains %}
 # Completely reset the firewall by removing all rules and chains.
 iptables -P INPUT {{ filewall_input_default }}
 iptables -P FORWARD {{ filewall_forward_default }}
@@ -40,7 +41,7 @@ iptables -t nat -F
 iptables -t mangle -F
 iptables -F
 iptables -X
-
+{% endif %}
 
 # Accept traffic from loopback interface (localhost).
 iptables -A INPUT -i lo -j ACCEPT

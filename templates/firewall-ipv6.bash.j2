@@ -11,12 +11,13 @@ if [ -x "$(which ip6tables 2>/dev/null)" ]; then
 # This section is a generic header that should be suitable for most hosts.    #
 ###############################################################################
  # Flush chains
-
+{% if firewall_flush_rules_and_chains %}
   ip6tables -F INPUT
   ip6tables -F FORWARD
   ip6tables -F OUTPUT
   ip6tables -F
   ip6tables -X
+{% endif %}
 
 # Set up default policies
   ip6tables -P INPUT DROP
@@ -115,4 +116,3 @@ if [ -x "$(which ip6tables 2>/dev/null)" ]; then
   ip6tables -A INPUT -j DROP
 
 fi
-
