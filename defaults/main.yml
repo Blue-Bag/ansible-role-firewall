@@ -125,6 +125,7 @@ firewall_ipset: False
 firewall_reban_hosts: yes
 firewall_reban_list: 'banned-hosts'
 firewall_ipset_timeout: 2073600
+firewall_ipset_bl_maxelem: 100000
 
 #Create lists, for network blocks and single IP addresses
 #hash:net = Networks
