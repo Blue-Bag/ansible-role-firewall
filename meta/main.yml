@@ -2,9 +2,9 @@
 dependencies: []
 
 galaxy_info:
-  author: geerlingguy
-  description: Simple iptables firewall for most Unix-like systems.
-  company: "Midwestern Mac, LLC"
+  author: iAugur (originally forked from geerlingguy)
+  description: Chain and ipset based iptables firewall for most Unix-like systems.
+  company: "Blue-Bag Ltd"
   license: "license (BSD, MIT)"
   min_ansible_version: 1.4
   platforms:
@@ -17,6 +17,10 @@ galaxy_info:
   - name: Ubuntu
     versions:
     - all
-  categories:
+  galaxy_tags:
     - networking
     - system
+    - security
+    - firewall
+    - iptables
+    - tcp
