@@ -36,7 +36,7 @@
     group_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
   when:
     - firewall_mode == 'chain'
-     - firewall_whitelistgroup is defined
+    - firewall_whitelistgroup is defined
 
 - name: Setfact for allowed ips2 list for chain script
   set_fact:

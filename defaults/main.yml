@@ -1,6 +1,6 @@
 ---
 # firewall mode [simple | chain ]
-firewall_mode: simple
+firewall_mode: 'simple'
 firewall_backup_cfg: false
 
 firewall_state: started
