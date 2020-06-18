@@ -1,6 +1,6 @@
 # Ansible Role: Firewall (iptables)
 
-[![Build Status](https://travis-ci.org/geerlingguy/ansible-role-firewall.svg?branch=master)](https://travis-ci.org/geerlingguy/ansible-role-firewall)
+[![Build Status](https://travis-ci.org/Blue-Bag/ansible-role-firewall.svg?branch=dev](https://travis-ci.org/Blue-Bag/ansible-role-firewall)
 
 Installs a simple iptables-based firewall for RHEL/CentOS or Debian/Ubuntu systems.
 
