@@ -21,30 +21,36 @@
     owner: root
     group: root
     mode: 0744
-    backup: "{{firewall_backup_cfg}}"
+    backup: "{{ firewall_backup_cfg }}"
   when: firewall_mode == 'simple'
   notify: restart firewall
 
 # - name: Show the list of inv_ip_list
 #   debug:
 #     msg: "{{ groups['remote'] |map('extract', hostvars, ['custom_facts','aliases','0','ip'])|list }}"
- #   msg="{{ hostvars|fetchlistfromdict(groups['remote']) |map(attribute='custom_facts.aliases.0.ip')|list}}"
-#{{ groups['remote'] |map('extract', hostvars, ['ansible_ssh_host'])|list }}
+#     msg="{{ hostvars|fetchlistfromdict(groups['remote']) |map(attribute='custom_facts.aliases.0.ip')|list}}"
+# {{ groups['remote'] |map('extract', hostvars, ['ansible_ssh_host'])|list }}
 # note this needs the fetchlistfromdict filter plugin to work
 - name: Setfact for allowed ips list for chain script
   set_fact:
     group_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
-  when: firewall_mode == 'chain' and firewall_whitelistgroup is defined
+  when:
+    - firewall_mode == 'chain'
+     - firewall_whitelistgroup is defined
 
 - name: Setfact for allowed ips2 list for chain script
   set_fact:
     firewall_chain_whitelist: "{{ firewall_chain_wl|map(attribute='ip')|list|unique }}"
-  when: firewall_mode == 'chain' and firewall_whitelistgroup is defined
+  when:
+    - firewall_mode == 'chain'
+    - firewall_whitelistgroup is defined
 
 - name: Create master whitelist for script
   set_fact:
     firewall_allowed_ips: "{{ group_allowed_ips | union(firewall_chain_whitelist | unique) }}"
-  when: firewall_mode == 'chain' and firewall_whitelistgroup is defined
+  when:
+    - firewall_mode == 'chain'
+    - firewall_whitelistgroup is defined
 
 
 - name: Copy firewall chain script into place.
@@ -54,7 +60,7 @@
     owner: root
     group: root
     mode: 0744
-    backup: "{{firewall_backup_cfg}}"
+    backup: "{{ firewall_backup_cfg }}"
   when: firewall_mode == 'chain'
   notify: restart firewall
 
@@ -69,22 +75,22 @@
 
 
 - block:
-     - name: check for old firewall service
-       register: oldfirewall
-       stat: path=/etc/init.d/firewall
+    - name: check for old firewall service
+      register: oldfirewall
+      stat: path=/etc/init.d/firewall
 
-     - name: Remove old firewall service script
-       file:
-         path: /etc/init.d/firewall
-         state: absent
-       when: oldfirewall.stat.exists
+    - name: Remove old firewall service script
+      file:
+        path: /etc/init.d/firewall
+        state: absent
+      when: oldfirewall.stat.exists
 
-     - name: stop the old firewall
-       service:
-         name: firewall
-         state: stopped
-         enabled: False
-       when: oldfirewall.stat.exists
+    - name: stop the old firewall
+      service:
+        name: firewall
+        state: stopped
+        enabled: false
+      when: oldfirewall.stat.exists
   when: "ansible_service_mgr == 'systemd'"
   become: true
   become_user: root
