@@ -2,6 +2,11 @@
 # firewall mode [simple | chain ]
 firewall_mode: 'simple'
 firewall_backup_cfg: false
+# export the rules (won't be idempotent)
+firewall_iptables_save: false
+
+# sometimes we need to see why systemd failed
+firewall_debug: false
 
 firewall_state: started
 firewall_enabled_at_boot: true

@@ -2,10 +2,11 @@
 - name: Ensure iptables is installed.
   package: name=iptables state=present
 
+# https://ilhicas.com/2018/04/08/Fixing-do-you-need-insmod.html
 - name: init ipv6
   command: "modprobe ip6table_filter"
   become: true
-  ignore_errors: yes
+  ignore_errors: true
 
 - import_tasks: badips.yml
   when: firewall_block_badips
@@ -113,19 +114,26 @@
     name: firewall
     state: "{{ firewall_state }}"
     enabled: "{{ firewall_enabled_at_boot }}"
-  ignore_errors: yes
+  ignore_errors: true
 
-- name: get the output for systemd
-  command: "systemctl status firewall.service"
-  register: sysdoutput
+- block:
+    - name: get the output for systemd
+      command: "systemctl status firewall.service"
+      register: sysdoutput
 
-- name: display output
-  debug:
-    msg: "{{ sysdoutput.stdout }}"
+    - name: display output
+      debug:
+        msg: "{{ sysdoutput.stdout }}"
+        verbosity: 3
+  when:
+    - firewall_debug
+    - ansible_service_mgr == 'systemd'
 
 - include: disable-other-firewalls.yml
   when: firewall_disable_firewalld or firewall_disable_ufw
 
 - name: save iptables
-  shell: iptables-save > /etc/iptables.up.rules
+  command: iptables-save > /etc/iptables.up.rules
   become: true
+  changed_when: false
+  when: firewall_iptables_save
