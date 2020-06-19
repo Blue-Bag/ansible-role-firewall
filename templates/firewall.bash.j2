@@ -98,12 +98,16 @@ iptables -A INPUT -m limit --limit 15/minute -j LOG --log-level 7 --log-prefix "
 # Drop all other traffic.
 iptables -A INPUT -j DROP
 
+
+{% if firewall_enable_ipv6 %}
 # Configure IPv6 if ip6tables is present.
 if [ -x "$(which ip6tables 2>/dev/null)" ]; then
 
+{% if firewall_flush_rules_and_chains %}
   # Remove all rules and chains.
   ip6tables -F
   ip6tables -X
+{% endif %}
 
   # Accept traffic from loopback interface (localhost).
   ip6tables -A INPUT -i lo -j ACCEPT
@@ -118,7 +122,7 @@ if [ -x "$(which ip6tables 2>/dev/null)" ]; then
   {% endfor %}
 
   # Accept icmp ping requests.
-  ip6tables -A INPUT -p icmp -j ACCEPT
+  ip6tables -A INPUT -p icmpv6 -j ACCEPT
 
   # Allow NTP traffic for time synchronization.
   ip6tables -A OUTPUT -p udp --dport 123 -j ACCEPT
@@ -144,3 +148,4 @@ if [ -x "$(which ip6tables 2>/dev/null)" ]; then
   ip6tables -A INPUT -j DROP
 
 fi
+{% endif %}

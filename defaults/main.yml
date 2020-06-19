@@ -15,7 +15,6 @@ firewall_allowed_tcp_ports:
   - "80"
   - "443"
 
-firewall_ipv6: true
 # don't put ssh in here as we treat that separately
 firewall_allowed_tcp_ports_ip6: []
 
@@ -33,6 +32,7 @@ firewall_forwarded_tcp_ports: []
 firewall_forwarded_udp_ports: []
 firewall_additional_rules: []
 
+firewall_enable_ipv6: true
 firewall_ip6_additional_rules: []
 
 firewall_log_dropped_packets: true

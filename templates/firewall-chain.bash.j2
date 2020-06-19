@@ -235,6 +235,6 @@ iptables -A INPUT -m limit --limit 15/minute -j LOG --log-prefix "iptables[In Dr
 # Drop all other traffic.
 iptables -A INPUT -j DROP
 
-{% if firewall_ipv6 %}
+{% if firewall_enable_ipv6 %}
 {% include 'firewall-ipv6.bash.j2' %}
 {% endif %}
