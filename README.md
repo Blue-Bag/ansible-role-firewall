@@ -166,27 +166,30 @@ This mode also makes use of IPSETs to manage long lists of blocked ips, lists of
 In chain mode the role also allows for other blocks such as security precautions.
 
 ```
-firewall_whitelist:
+firewall_allowlist:
 
 - { name: 'local', ip: "192.168.100.1" }
 ```
-A list of IPs that will be whitelisted
+A list of IPs that will be allowed
 ```
-firewall_blacklist:
+firewall_denylist:
 - { name: 'Some rogue', ip: "96.47.225.0/24" }
 ```
-A list of IPs that will be blacklisted
+A list of IPs that will be blocked
 
 ## Access Control Lists (ACLs)
 The chain mode firewall makes use of lists, ipsets and blocks of chains to manage the control of access to specific ports.
 All ports are protected from lists of known ips from block lists.
 Such lists can be obtained from services such as blocklist.de etc
 See the refs for details about a role to manage these ipset block lists.
-Note: This role has been heavily refactored to eradicate problematic vocabulary.
+
+Note: This role is being heavily refactored to eradicate problematic vocabulary.
 The terminology used is as follows:
-`AllowList` - IPs that are trusted and know
-`TrustedList` - IPs that are trusted but not given blanket privileged access to all ports
-`DenyList` - IPs that are explicitly excluded from access to any ports and dropped
+
+ - `AllowList` - IPs that are trusted and know
+ - `TrustedList` - IPs that are trusted but not given blanket privileged 
+access to all ports
+ - `DenyList` - IPs that are explicitly excluded from access to any ports and dropped
 Note that packets can be dropped or rejected.
 
 ```
@@ -208,7 +211,7 @@ Allowlists are a useful way of providing access to your various services/servers
 One useful method is to compile a list of all of your web servers and adding them to the Allow list for your databases for example. This particularly useful for setting up a private network and granting access to load balancers etc
 You can specify a group in your inventory to be used a set to be added to the AllowList
 
-`firewall_whitelistgroup: "remote"` - select a host group from your inventory
+`firewall_allowlistgroup: "remote"` - select a host group from your inventory
 The Allow list is built up from a set of lists.
 
 You can also provide a specific list just for the chains that may be less 'trusted' than the trusted AccessList
@@ -220,7 +223,7 @@ allowing access to the chains but not everything else
  It is possible also to maintain a list  of Denied ips.
  However it is better t use the blocklists discussed later as these lists can get very long!
  ```
- firewall_blacklist:
+ firewall_denylist:
   - {name: 'Some rogue', ip: "96.47.225.0/24"}
 ```
 Note: Ips can be specified as both Ips and CIDR nets
