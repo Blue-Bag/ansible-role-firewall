@@ -109,6 +109,15 @@
     name: firewall
     state: "{{ firewall_state }}"
     enabled: "{{ firewall_enabled_at_boot }}"
+  ignore_errors: yes
+
+- name: get the output for systemd
+  command: "systemctl status firewall.service"
+  register: sysdoutput
+
+- name: display output
+  debug:
+    msg: "{{ sysdoutput.stdout }}"
 
 - include: disable-other-firewalls.yml
   when: firewall_disable_firewalld or firewall_disable_ufw
