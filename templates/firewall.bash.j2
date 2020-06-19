@@ -31,9 +31,9 @@ fi
 
 {% if firewall_flush_rules_and_chains %}
 # Completely reset the firewall by removing all rules and chains.
-iptables -P INPUT ACCEPT
-iptables -P FORWARD ACCEPT
-iptables -P OUTPUT ACCEPT
+iptables -P INPUT {{ filewall_input_default }}
+iptables -P FORWARD {{ filewall_forward_default }}
+iptables -P OUTPUT {{ filewall_output_default }}
 iptables -t nat -F
 iptables -t mangle -F
 iptables -F
