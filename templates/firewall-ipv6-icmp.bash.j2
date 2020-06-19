@@ -1,0 +1,80 @@
+# Chain for preventing ping flooding - up to 6 pings per second from a single
+# source, again with log limiting. Also prevents us from ICMP REPLY flooding
+# some victim when replying to ICMP ECHO from a spoofed source.
+  ip6tables -N ICMPFLOOD
+  ip6tables -A ICMPFLOOD -m recent --set --name ICMP --rsource
+  ip6tables -A ICMPFLOOD -m recent --update --seconds 1 --hitcount 6 --name ICMP --rsource --rttl -m limit --limit 1/sec --limit-burst 1 -j LOG --log-prefix "ip6tables[ICMP-flood]: "
+  ip6tables -A ICMPFLOOD -m recent --update --seconds 1 --hitcount 6 --name ICMP --rsource --rttl -j DROP
+  ip6tables -A ICMPFLOOD -j ACCEPT
+
+  # Permit needed ICMP packet types for IPv6 per RFC 4890.
+  ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 1   -j ACCEPT #Destination Unreachable
+  ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 2   -j ACCEPT #Packet Too Big
+  ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 3   -j ACCEPT #Time Exceeded
+  ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 4   -j ACCEPT #Parameter Problem
+  ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 133 -j ACCEPT #Router Solicitation
+# ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 134 -j ACCEPT #Router Advertisement
+# ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 135 -j ACCEPT #Neighbor Solicitation
+# ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 136 -j ACCEPT #Neighbor Advertisement
+# ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 137 -j ACCEPT #Redirect Message
+  ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 141 -j ACCEPT #Inverse Neighbor Discovery
+  ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 142 -j ACCEPT #Inverse Neighbor Discovery
+  ip6tables -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 130 -j ACCEPT #Multicast Listener Query
+  ip6tables -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 131 -j ACCEPT #Multicast Listener Report
+  ip6tables -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 132 -j ACCEPT #Multicast Listener Done
+  ip6tables -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 143 -j ACCEPT #Home Agent Address Discovery
+  ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 148 -j ACCEPT #Certification Path Solicitation Message
+  ip6tables -A INPUT              -p ipv6-icmp --icmpv6-type 149 -j ACCEPT #Certification Path Advertisement Message
+  ip6tables -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 151 -j ACCEPT #Multicast Router Advertisement
+  ip6tables -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 152 -j ACCEPT #Multicast Router Solicitation
+  ip6tables -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 153 -j ACCEPT #Multicast Router Termination
+
+
+# Allow others ICMPv6 types but only if the hop limit field is 255.
+  ip6tables -A INPUT -m hl --hl-eq 255 -p ipv6-icmp --icmpv6-type 134 -j ACCEPT #Router Advertisement
+  ip6tables -A INPUT -m hl --hl-eq 255 -p ipv6-icmp --icmpv6-type 135 -j ACCEPT #Neighbor Solicitation
+  ip6tables -A INPUT -m hl --hl-eq 255 -p ipv6-icmp --icmpv6-type 136 -j ACCEPT #Neighbor Advertisement
+  ip6tables -A INPUT -m hl --hl-eq 255 -p ipv6-icmp --icmpv6-type 137 -j ACCEPT #Redirect Message
+
+
+# Permit IMCP echo requests (ping) and use ICMPFLOOD chain for preventing ping
+# flooding.
+  ip6tables -A INPUT -p ipv6-icmp --icmpv6-type 128 -j ICMPFLOOD
+  ip6tables -A INPUT -p ipv6-icmp --icmpv6-type 129 -j ICMPFLOOD
+
+# When there isn't a match, the default policy (DROP) will be applied.
+# To be sure, drop all other ICMPv6 types.
+# We're dropping enough icmpv6 types to break RFC compliance.
+
+  ip6tables -A INPUT -p icmpv6 -j LOG --log-prefix "ip6tables[dropped ICMPv6]:"
+  ip6tables -A INPUT -p icmpv6 -j DROP
+
+# Allow ICMPv6 types that should be sent through the Internet.
+
+  ip6tables -A OUTPUT -p icmpv6 --icmpv6-type destination-unreachable -j ACCEPT
+  ip6tables -A OUTPUT -p icmpv6 --icmpv6-type packet-too-big -j ACCEPT
+  ip6tables -A OUTPUT -p icmpv6 --icmpv6-type time-exceeded -j ACCEPT
+  ip6tables -A OUTPUT -p icmpv6 --icmpv6-type parameter-problem -j ACCEPT
+
+# Limit most NDP messages to the local network.
+
+  ip6tables -A OUTPUT -p icmpv6 --icmpv6-type neighbour-solicitation -m hl --hl-eq 255 -j ACCEPT
+  ip6tables -A OUTPUT -p icmpv6 --icmpv6-type neighbour-advertisement -m hl --hl-eq 255 -j ACCEPT
+  ip6tables -A OUTPUT -p icmpv6 --icmpv6-type router-solicitation -m hl --hl-eq 255 -j ACCEPT
+
+# If we're acting like a router, this could be a sign of problems.
+
+  ip6tables -A OUTPUT -p icmpv6 --icmpv6-type router-advertisement -j LOG --log-prefix "ip6tables[ra ICMPv6 type]:"
+  ip6tables -A OUTPUT -p icmpv6 --icmpv6-type redirect -j LOG --log-prefix "ip6tables[redirect ICMPv6 type]:"
+  ip6tables -A OUTPUT -p icmpv6 --icmpv6-type router-advertisement -j REJECT
+  ip6tables -A OUTPUT -p icmpv6 --icmpv6-type redirect -j REJECT
+
+# Accept all other ICMPv6 types in the OUTPUT chain.
+
+  ip6tables -A OUTPUT -p icmpv6 -j ACCEPT
+
+# Reject in the FORWARD chain. This rule is probably not needed
+# due to the FORWARD policy.
+
+  ip6tables -A FORWARD -p icmpv6 -j REJECT
+

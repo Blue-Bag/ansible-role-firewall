@@ -1,0 +1,22 @@
+# Attempt to block portscans (http://serverfault.com/questions/245711/iptables-tips-tricks)
+# Anyone who tried to portscan us is locked out for an entire day.
+iptables -A INPUT   -m recent --name portscan --rcheck --seconds 86400 -j DROP
+iptables -A FORWARD -m recent --name portscan --rcheck --seconds 86400 -j DROP
+
+# Once the day has passed, remove them from the portscan list
+iptables -A INPUT   -m recent --name portscan --remove
+iptables -A FORWARD -m recent --name portscan --remove
+
+# These rules add scanners to the portscan list, and log the attempt.
+iptables -A INPUT   -p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix "iptables[Portscan]: "
+iptables -A INPUT   -p tcp -m tcp --dport 139 -m recent --name portscan --set -j DROP
+
+iptables -A FORWARD -p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix "iptables[Portscan]: "
+iptables -A FORWARD -p tcp -m tcp --dport 139 -m recent --name portscan --set -j DROP
+
+
+# https://www.ossramblings.com/using_iptables_rate_limiting_to_prevent_portscans
+# iptables -A INPUT -p tcp -i eth0 -m state --state NEW -m recent --set
+# iptables -A INPUT -p tcp -i eth0 -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
+# iptables -A FORWARD -p tcp -i eth0 -m state --state NEW -m recent --set
+# iptables -A FORWARD -p tcp -i eth0 -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP

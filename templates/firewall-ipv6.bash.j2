@@ -1,0 +1,118 @@
+#!/bin/bash
+# Configure IPv6 if ip6tables is present.
+if [ -x "$(which ip6tables 2>/dev/null)" ]; then
+
+
+# see https://gist.github.com/jirutka/3742890
+#     https://resources.sei.cmu.edu/tools/downloads/vulnerability-analysis/assets/IPv6/ip6tables_rules.txt
+##############################################################################
+# 1. COMMON HEADER                                                            #
+#                                                                             #
+# This section is a generic header that should be suitable for most hosts.    #
+###############################################################################
+ # Flush chains
+{% if firewall_flush_rules_and_chains %}
+  ip6tables -F INPUT
+  ip6tables -F FORWARD
+  ip6tables -F OUTPUT
+  ip6tables -F
+  ip6tables -X
+{% endif %}
+
+# Set up default policies
+  ip6tables -P INPUT DROP
+  ip6tables -P FORWARD DROP
+# some services like reCaptcha will use IPv6 so allow output or whitelist
+  ip6tables -P OUTPUT ACCEPT
+
+
+# Accept traffic from loopback interface (localhost).
+  ip6tables -A INPUT -i lo -j ACCEPT
+  ip6tables -A INPUT -s ::1 -d ::1 -j ACCEPT
+
+# Continue connections that are already established or related to an established
+# connection.
+  ip6tables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+# Allow established connections:
+# ip6tables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+
+###############################################################################
+# 2. Security                                                                 #
+#                                                                             #
+# This section sets up specific security                                      #
+###############################################################################
+
+# Drop non-conforming packets, such as malformed headers, etc.
+  ip6tables -A INPUT -m conntrack --ctstate INVALID -j DROP
+
+# Block remote packets claiming to be from a loopback address.
+  ip6tables -A INPUT -s ::1/128 ! -i lo -j DROP
+
+# Chain for preventing SSH brute-force attacks.
+# Permits 10 new connections within 5 minutes from a single host then drops
+# incomming connections from that host. Beyond a burst of 100 connections we
+# log at up 1 attempt per second to prevent filling of logs.
+  ip6tables -N SSHBRUTE
+  ip6tables -A SSHBRUTE -m recent --name SSH --set
+  ip6tables -A SSHBRUTE -m recent --name SSH --update --seconds 300 --hitcount 10 -m limit --limit 1/second --limit-burst 100 -j LOG --log-prefix "ip6tables[SSH-brute]: " --log-level {{ firewall_log_level }}
+  ip6tables -A SSHBRUTE -m recent --name SSH --update --seconds 300 --hitcount 10 -j DROP
+  ip6tables -A SSHBRUTE -j ACCEPT
+
+# Accept worldwide access to SSH and use SSHBRUTE chain for preventing
+# brute-force attacks.
+  ip6tables -A INPUT -p tcp --dport 22 --syn -m conntrack --ctstate NEW -j SSHBRUTE
+
+{% if firewall_extra_security %}
+{% include 'firewall-ipv6-icmp.bash.j2' %}
+{% include 'block-ipv6-misc.bash.j2' %}
+{% endif %}
+
+###############################################################################
+# 3. HOST SPECIFIC RULES                                                      #
+#                                                                             #
+# This section is a good place to enable your host-specific services.         #
+###############################################################################
+  # Open ports.
+  {# Add a rule for each open port #}
+  {% for port in firewall_allowed_tcp_ports_ip6 %}
+  ip6tables -A INPUT -p tcp -m tcp --dport {{ port }} --syn -m conntrack --ctstate NEW  -j ACCEPT
+  {% endfor %}
+  {% for port in firewall_allowed_udp_ports %}
+  ip6tables -A INPUT -p udp -m udp --dport {{ port }} -j ACCEPT
+  {% endfor %}
+
+
+###############################################################################
+# 4. GENERAL RULES                                                            #
+#                                                                             #
+# This section contains general rules that should be suitable for most hosts. #
+###############################################################################
+
+
+# Allow NTP traffic for time synchronization.
+  ip6tables -A OUTPUT -p udp --dport 123 -j ACCEPT
+  ip6tables -A INPUT -p udp --sport 123 -j ACCEPT
+
+# Additional custom rules.
+{% for rule in firewall_ip6_additional_rules %}
+  {{ rule }}
+{% endfor %}
+
+
+{% if firewall_log_dropped_packets %}
+# Prevent DOS by filling log files.
+  ip6tables -A INPUT -m limit --limit 1/second --limit-burst 100 -j LOG --log-prefix "ip6tables[DOS]: " --log-level {{ firewall_log_level }}
+
+  # Log EVERYTHING (ONLY for Debug).
+  # ip6tables -A INPUT -j LOG
+
+  # Log other incoming requests (all of which are dropped) at 15/minute max.
+  ip6tables -A INPUT -m limit --limit 15/minute -j LOG --log-prefix "ip6tables[Dropped]: " --log-level {{ firewall_log_level }}
+{% endif %}
+
+  # Drop all other traffic.
+  ip6tables -A INPUT -j DROP
+
+fi

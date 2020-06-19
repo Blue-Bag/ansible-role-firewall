@@ -1,0 +1,39 @@
+# Chain for preventing ping flooding - up to 6 pings per second from a single
+# source, again with log limiting. Also prevents us from ICMP REPLY flooding
+# some victim when replying to ICMP ECHO from a spoofed source.
+iptables -N ICMPFLOOD
+iptables -A ICMPFLOOD -m recent --set --name ICMP --rsource
+iptables -A ICMPFLOOD -m recent --update --seconds 1 --hitcount 6 --name ICMP --rsource --rttl -m limit --limit {{ firewall_allow_ping_limit|default('1/second') }} --limit-burst 1 -j LOG --log-prefix "iptables[ICMP-flood]: "
+iptables -A ICMPFLOOD -m recent --update --seconds 1 --hitcount 6 --name ICMP --rsource --rttl -j DROP
+iptables -A ICMPFLOOD -j ACCEPT
+
+# {% if firewall_allow_ping %}
+# # Accept icmp ping requests.
+# #iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
+# iptables -A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit {{ firewall_allow_ping_limit|default('1/second') }} -j ACCEPT
+# {% else %}
+# # Don't allow pings through
+# iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j DROP
+# {% endif %}
+
+
+# Permit useful IMCP packet types.
+# Note: RFC 792 states that all hosts MUST respond to ICMP ECHO requests.
+# Blocking these can make diagnosing of even simple faults much more tricky.
+# Real security lies in locking down and hardening all services, not by hiding.
+
+iptables -A INPUT -p icmp --icmp-type 0  -m conntrack --ctstate NEW -j ACCEPT
+iptables -A INPUT -p icmp --icmp-type 3  -m conntrack --ctstate NEW -j ACCEPT
+
+{% if firewall_allow_ping %}
+# Accept icmp ping requests.
+#iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
+#iptables -A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit {{ firewall_allow_ping_limit|default('1/second') }} -j ACCEPT
+iptables -A INPUT -p icmp --icmp-type 8  -m conntrack --ctstate NEW -j ICMPFLOOD
+{% else %}
+# Don't allow pings through
+iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j DROP
+{% endif %}
+
+iptables -A INPUT -p icmp --icmp-type 11 -m conntrack --ctstate NEW -j ACCEPT
+

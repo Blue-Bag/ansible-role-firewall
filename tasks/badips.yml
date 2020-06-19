@@ -13,7 +13,7 @@
     owner: "root"
     group: "root"
     mode: "0740"
-    recurse: yes
+    recurse: true
     state: directory
   become: true
 
@@ -27,7 +27,7 @@
   become: true
 
 - name: Set the key on the server
-  command: "wget -qO- https://www.badips.com/set/key{{ badips_key}}"
+  command: "wget -qO- https://www.badips.com/set/key{{ badips_key }}"
 
 - name: Run the script once
   shell: "{{ firewall_badips_folder }}/badips.sh >> badipslog.txt"

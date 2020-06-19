@@ -1,0 +1,21 @@
+###############################################################################
+# 4. GENERAL SECURITY                                                         #
+#                                                                             #
+# This section contains general rules that should be suitable for most hosts. #
+###############################################################################
+
+# Do not log packets that are going to ports used by SMB
+# (Samba / Windows Sharing).
+iptables -A INPUT -p udp -m multiport --dports 135,445 -j DROP
+iptables -A INPUT -p udp --dport 137:139 -j DROP
+iptables -A INPUT -p udp --sport 137 --dport 1024:65535 -j DROP
+iptables -A INPUT -p tcp -m multiport --dports 135,139,445 -j DROP
+
+# Do not log packets that are going to port used by UPnP protocol.
+iptables -A INPUT -p udp --dport 1900 -j DROP
+
+# Do not log late replies from nameservers.
+iptables -A INPUT -p udp --sport 53 -j DROP
+
+# Good practise is to explicately reject AUTH traffic so that it fails fast.
+iptables -A INPUT -p tcp --dport 113 --syn -m conntrack --ctstate NEW -j REJECT --reject-with tcp-reset

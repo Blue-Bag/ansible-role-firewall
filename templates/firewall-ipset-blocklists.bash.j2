@@ -1,0 +1,48 @@
+
+#################   Block lists #####################
+
+# Ipsets for blocklists
+# call the createIPSET function for each list
+{%for list in firewall_blocklists %}
+createIPSET-Timeout "{{ list.name }}" "{{ list.type }}" "{{ list.timeout | default(2073600)}}"
+{% endfor %}
+
+
+#1 Create the chain and add the DROP rule to ip
+iptables -N blocked_traffic
+iptables -A blocked_traffic -j LOG  --log-level {{ firewall_log_level }} --log-prefix "iptables[Bad IP]: " -m limit --limit 15/minute
+iptables -A blocked_traffic -j DROP
+#2 Create the rules in the INPUT chain to check for incoming traffic
+# that matches the sets
+{% for list in firewall_blocklists %}
+iptables -I INPUT 3 -m set --match-set {{ list.name }} src -j blocked_traffic
+{% endfor %}
+
+
+# if we see a banned ip add to the recently banned list with a timeout
+{% if firewall_reban_hosts %}
+# create an ipset for the rebanned hosts
+createIPSET-Timeout "{{ firewall_reban_list }}" "hash:ip" "604800"
+# create a chain to add to the list
+iptables -N IP_Add2bannedhosts
+iptables -A IP_Add2bannedhosts -j SET --add-set {{ firewall_reban_list }} src --exist
+# match src against banned hosts lists
+iptables -I INPUT 4 -m set --match-set {{ firewall_reban_list }} src -j blocked_traffic
+{% endif %}
+
+
+{% for list in firewall_blocklists if list.persist %}
+readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}" "{{ list.timeout }}"
+{% endfor %}
+
+
+# Add badips
+{% if firewall_block_badips %}
+ipset -N badips hash:ip family inet hashsize 8192 maxelem 65536
+iptables -I INPUT -m set --match-set badips src -j blocked_traffic
+if [ -f {{ firewall_badips_db }} ]; then
+ipset restore < {{ firewall_badips_db }}
+fi
+{% endif %}
+
+#################   End of blocklists #####################

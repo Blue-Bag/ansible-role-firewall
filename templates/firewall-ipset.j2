@@ -1,35 +1,116 @@
+#################   Default ipset functions #####################
+IPCMD=$(command -v ipset)
 
-ipset destroy
-{%for list in firewall_blocklists %}
-ipset -N {{ list.name }} {{ list.type }} hashsize 4096
-{% endfor %}
+#The timeout setting should be more than the freq of running this script
+# 7 days = 604800
+# 1 month  2592000
+# 24 days 2073600
+# current max is 24 days - see https://marc.info/?l=netfilter-devel&m=141337202317570&w=2
+TIMEOUT={{ firewall_ipset_timeout }}
+MAXELEM={{ firewall_ipset_bl_maxelem | default('100000') }}
 
-#1 Create the chain and add the DROP rule to ip
-iptables -N blocked_traffic
-iptables -A blocked_traffic -j LOG --log-level 7 --log-prefix "Drop Bad IP List" -m limit --limit 15/minute
-iptables -A blocked_traffic -j DROP
-#2 Create the rules in the INPUT chain to check for incoming traffic
-# that matches the sets
-{% for list in firewall_blocklists %}
-iptables -I INPUT -m set --match-set {{ list.name }} src -j blocked_traffic
-{% endfor %}
+# simple ipset create
+function createIPSET {
+  IPSET=$1
+  IPTYP=$2
+
+  if ! "$IPCMD" list "$IPSET" -name >/dev/null 2>&1
+  then
+      "$IPCMD" create "$IPSET" "$IPTYP" hashsize 4096 comment
+  fi
+
+}
 
 
-# add the ips/networks to the lists
-{% for list in firewall_blocklists %}
-while read ip{{ loop.index }}
-do
-    ipset -A {{ list.name }} $ip{{ loop.index }}
-done < /etc/firewall-{{ list.name }}.txt | sort | uniq
-{% endfor %}
+# Create an ipset table with timeout
+function createIPSET-Timeout {
+  IPSET=$1
+  IPTYP=$2
+  IPTME=$3
+  # check if the IP list exists
+  if ! "$IPCMD" list "$IPSET" -name >/dev/null 2>&1
+  then
+    ipset_exists=false
+  else
+    # if it does exist check it uses the timeouts
 
-# Add badips
-{% if firewall_block_badips %}
-ipset -N badips hash:ip family inet hashsize 8192 maxelem 65536
-iptables -I INPUT -m set --match-set badips src -j blocked_traffic
-if [ -f {{ firewall_badips_db }} ]; then
-ipset restore < {{ firewall_badips_db }}
+    "$IPCMD" list "$IPSET" | grep -E '^Header: family inet.*timeout.([0-9]*)$'
+
+    RESULT=$?   # grep will return 0 if it finds 'failure',  non-zero if it didn't
+
+    if [ $RESULT -eq 0 ];then
+     # ipset_timeout=true
+      ipset_exists=true
+    else
+     # ipset_timeout=false
+      echo "Destroying existing ipset as no timeout"
+      $IPCMD destroy "$IPSET"
+      ipset_exists=false
+    fi
+    #ipset_exists=true
+  fi
+
+if [ "$ipset_exists" == "false" ];then
+ echo "Create $IPSET"
+ $IPCMD create "$IPSET" "$IPTYP" hashsize 4096 maxelem "$MAXELEM" timeout "$IPTME" -exist || { echo "$0: Unable to create ipset: $IPSET" >&2; exit 2; }
+else
+  echo "$IPSET exists and is timeout compatable"
 fi
+
+}
+
+# read in the iplists
+function readIPLIST {
+  SRC=$1
+  IPSET=$2
+  IPTYPE=$3
+  IPTME=$4
+if [ ! -f "$SRC" ]; then
+    echo "Input IPLIST File not found!: $SRC"
+    exit 1
+fi
+
+if [ "$IPTYPE" = "hash:ip" ]; then
+# removing invalid ips from file
+#sed -rn -i.bak '/^([0-9]{1,3}\.){3}[0-9]{1,3}/!d' $SRC
+ sed -ri '/^([0-9]{1,3}\.){3}[0-9]{1,3}/!d' "$SRC"
+fi
+
+# clean the list of spaces
+ sed -i 's/^[ \t]*//;s/[ \t]*$//' "$SRC"
+
+# remove blank lines
+ sed -i '/^$/d' $SRC
+
+#build a restore list
+sed "s/.*/add $IPSET & timeout $IPTME -exist/" "$SRC" > "$IPSET-restore"
+
+#restore the list
+$IPCMD restore < "$IPSET-restore"
+
+# add the ips/networks to the list
+#while read _ip
+#do
+    #ipset -A blocked-nets $ip1
+ #   $IPCMD add $IPSET $_ip timeout $TIMEOUT -exist || { echo "$0: Unable to add $_ip to $IPSET, exiting early." >&2; exit 2; }
+#echo "adding $_ip"
+#done < $SRC | sort | uniq
+
+}
+
+#################   End of functions #####################
+#################     Build Ipsets   #####################
+
+{% if firewall_whitelist is defined %}
+{% include 'firewall-whitelist.bash.j2' %}
 {% endif %}
 
+{% if firewall_whitelist_cf %}
+{% include 'firewall-ipset-cf.j2' %}
+{% endif %}
 
+{% if firewall_blocklists  is defined %}
+{% include 'firewall-ipset-blocklists.bash.j2' %}
+{% endif %}
+
+#################     end of ipsets   #####################

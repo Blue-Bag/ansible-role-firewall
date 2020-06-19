@@ -1,43 +1,139 @@
 ---
-- name: Ensure iptables is installed (RedHat).
-  yum: pkg=iptables state=installed
-  when: ansible_os_family == 'RedHat'
+- name: Ensure iptables is installed.
+  package: name=iptables state=present
 
-- name: Ensure iptables is installed (Debian).
-  apt: pkg=iptables state=installed
-  when: ansible_os_family == 'Debian'
+# https://ilhicas.com/2018/04/08/Fixing-do-you-need-insmod.html
+- name: init ipv6
+  command: "modprobe ip6table_filter"
+  become: true
+  ignore_errors: true
 
-- include: badips.yml
+- import_tasks: badips.yml
   when: firewall_block_badips
 
-- include: ipset.yml
+- import_tasks: ipset.yml
   when: firewall_ipset
 
 - name: Flush iptables the first time playbook runs.
-  command: iptables -F creates=/etc/init.d/firewall
+  command: >
+    iptables -F
+    creates=/etc/firewall.bash
 
 - name: Copy firewall script into place.
-  template: src=firewall.bash.j2 dest=/etc/firewall.bash owner=root group=root mode=0744
+  template:
+    src: firewall.bash.j2
+    dest: /etc/firewall.bash
+    owner: root
+    group: root
+    mode: 0744
+    backup: "{{ firewall_backup_cfg }}"
   when: firewall_mode == 'simple'
   notify: restart firewall
 
+# - name: Show the list of inv_ip_list
+#   debug:
+#     msg: "{{ groups['remote'] |map('extract', hostvars, ['custom_facts','aliases','0','ip'])|list }}"
+#     msg="{{ hostvars|fetchlistfromdict(groups['remote']) |map(attribute='custom_facts.aliases.0.ip')|list}}"
+# {{ groups['remote'] |map('extract', hostvars, ['ansible_ssh_host'])|list }}
 # note this needs the fetchlistfromdict filter plugin to work
 - name: Setfact for allowed ips list for chain script
   set_fact:
-    firewall_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
-  when: firewall_mode == 'chain' and firewall_whitelistgroup is defined
+    group_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
+  when:
+    - firewall_mode == 'chain'
+    - firewall_whitelistgroup is defined
+
+- name: Setfact for allowed ips2 list for chain script
+  set_fact:
+    firewall_chain_whitelist: "{{ firewall_chain_wl|map(attribute='ip')|list|unique }}"
+  when:
+    - firewall_mode == 'chain'
+    - firewall_whitelistgroup is defined
+
+- name: Create master whitelist for script
+  set_fact:
+    firewall_allowed_ips: "{{ group_allowed_ips | union(firewall_chain_whitelist | unique) }}"
+  when:
+    - firewall_mode == 'chain'
+    - firewall_whitelistgroup is defined
+
 
 - name: Copy firewall chain script into place.
-  template: src=firewall-chain.bash.j2 dest=/etc/firewall.bash owner=root group=root mode=0744
+  template:
+    src: firewall-chain.bash.j2
+    dest: /etc/firewall.bash
+    owner: root
+    group: root
+    mode: 0744
+    backup: "{{ firewall_backup_cfg }}"
   when: firewall_mode == 'chain'
   notify: restart firewall
 
 - name: Copy firewall init script into place.
-  template: src=firewall.j2 dest=/etc/init.d/firewall owner=root group=root mode=0755
+  template:
+    src: firewall.init.j2
+    dest: /etc/init.d/firewall
+    owner: root
+    group: root
+    mode: 0755
+  when: "ansible_service_mgr != 'systemd'"
 
-- name: Ensure the firewall is enabled and will start on boot.
-  service: name=firewall state=started enabled=yes
+
+- block:
+    - name: check for old firewall service
+      register: oldfirewall
+      stat: path=/etc/init.d/firewall
+
+    - name: Remove old firewall service script
+      file:
+        path: /etc/init.d/firewall
+        state: absent
+      when: oldfirewall.stat.exists
+
+    - name: stop the old firewall
+      service:
+        name: firewall
+        state: stopped
+        enabled: false
+      when: oldfirewall.stat.exists
+  when: "ansible_service_mgr == 'systemd'"
+  become: true
+  become_user: root
+
+- name: Copy firewall systemd unit file into place (for systemd systems).
+  template:
+    src: firewall.unit.j2
+    dest: /etc/systemd/system/firewall.service
+    owner: root
+    group: root
+    mode: 0644
+  when: "ansible_service_mgr == 'systemd'"
+
+- name: Configure the firewall service.
+  service:
+    name: firewall
+    state: "{{ firewall_state }}"
+    enabled: "{{ firewall_enabled_at_boot }}"
+  ignore_errors: true
+
+- block:
+    - name: get the output for systemd
+      command: "systemctl status firewall.service"
+      register: sysdoutput
+
+    - name: display output
+      debug:
+        msg: "{{ sysdoutput.stdout }}"
+        verbosity: 3
+  when:
+    - firewall_debug
+    - ansible_service_mgr == 'systemd'
+
+- include: disable-other-firewalls.yml
+  when: firewall_disable_firewalld or firewall_disable_ufw
 
 - name: save iptables
-  shell: iptables-save > /etc/iptables.up.rules
+  command: iptables-save > /etc/iptables.up.rules
   become: true
+  changed_when: false
+  when: firewall_iptables_save
