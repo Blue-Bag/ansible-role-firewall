@@ -2,6 +2,10 @@
 - name: Ensure iptables is installed.
   package: name=iptables state=present
 
+- name: init ipv6
+  command: "modprobe ip6table_filter"
+  become: true
+  ignore_errors: yes
 
 - import_tasks: badips.yml
   when: firewall_block_badips
