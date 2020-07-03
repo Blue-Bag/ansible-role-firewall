@@ -124,7 +124,7 @@ iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --s
 {% if chain.default == 'ACCEPT'  %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Blacklist
 {% else %}
-iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "iptables[{{ chain.name }} Attempt]" --log-level {{ firewall_log_level }}
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "iptables[{{ chain.name }} Attempt]: " --log-level {{ firewall_log_level }}
 {% if firewall_ipset and firewall_reban_hosts %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j IP_Add2bannedhosts
 {% endif %}
