@@ -7,7 +7,7 @@ IPCMD=$(command -v ipset)
 # 24 days 2073600
 # current max is 24 days - see https://marc.info/?l=netfilter-devel&m=141337202317570&w=2
 TIMEOUT={{ firewall_ipset_timeout }}
-MAXELEM={{ firewall_ipset_bl_maxelem | default('100000') }}
+MAXELEM={{ firewall_ipset_bl_maxelem | default('250000') }}
 
 # simple ipset create
 function createIPSET {
