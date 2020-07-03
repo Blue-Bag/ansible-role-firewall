@@ -11,8 +11,8 @@ and
 
 >aims for simplicity over complexity, and only opens a few specific ports for incoming traffic (configurable through Ansible variables). If you have a rudimentary knowledge of `iptables` and/or firewalls in general, this role should be a good starting point for a secure system firewall.
 
-This role changes builds on that and adds support for a wide range of Iptables Ip6tables and IPSET features.
-You can still use the source functionality by setting the file wall mode to simple. If that your aim then use the geerlingguy.firewall role.
+This role builds on that basic functionality and adds support for a wide range of Iptables Ip6tables and IPSET features.
+You can still use the source functionality by setting the file wall mode to simple. If that is your aim then use the geerlingguy.firewall role.
 
 ```
 # firewall modes [simple | chain ]
@@ -187,7 +187,7 @@ Note: This role is being heavily refactored to eradicate problematic vocabulary.
 The terminology used is as follows:
 
  - `AllowList` - IPs that are trusted and know
- - `TrustedList` - IPs that are trusted but not given blanket privileged 
+ - `TrustedList` - IPs that are trusted but not given blanket privileged
 access to all ports
  - `DenyList` - IPs that are explicitly excluded from access to any ports and dropped
 Note that packets can be dropped or rejected.
