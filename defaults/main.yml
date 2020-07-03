@@ -7,6 +7,8 @@ firewall_iptables_save: false
 
 # sometimes we need to see why systemd failed
 firewall_debug: false
+#
+firewall_modprobe: false
 
 firewall_state: started
 firewall_enabled_at_boot: true
@@ -128,7 +130,7 @@ firewall_ipset: false
 firewall_reban_hosts: true
 firewall_reban_list: 'banned-hosts'
 firewall_ipset_timeout: 2073600
-firewall_ipset_bl_maxelem: 100000
+firewall_ipset_bl_maxelem: 250000
 
 # Create lists, for network blocks and single IP addresses
 # hash:net = Networks
