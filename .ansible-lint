@@ -1,9 +1,6 @@
 
 #parseable: true
 #quiet: true
-skip_list:
-  - '301'
-  - '303'
-  - '305'
+#skip_list:
 use_default_rules: true
 #verbosity: 1
