@@ -17,5 +17,8 @@ script:
   # Run tests.
   - molecule test
 
-# notifications:
-#   webhooks: https://galaxy.ansible.com/api/v1/notifications/
+# yamllint disable rule:line-length
+notifications:
+  slack:
+    secure: eB3bo5EPiQuLie3rDO27+Y+F+PToI5KtspeGdFOjjSoT3/pz0ShwMZ89jBMYv+U+WjchWDmuf3MAvpl9nzWiVEC3xaZzbnjbcm7JfMPgwd0iGmT7WowaXaVMHF+N6ejCe9GkomGb49Lq0srlH90VVBbMEUutWcuMhY9bK45WeXvxhx1or8LiWfZZCkCejX5JBfgcSHEUi6hyorzYgI27Q/v83FkTlCDaRPkYMEPQbgZfCEMI03WS90nrIlmfRKL/HVdUc2uk36QR6ZU1t1yJsg+YycRZkymKIoONLbg+U9Q1t4KZ/BT0n3V232NBp1WolHF5btxU/b7i/UyVKvgCGG0xnzU5BfF1Z3EqmAmNSdh9QGywOm3WZfqOcB00P67cJnsDJFqaZLQGbAVbfXPNlvEC0/oSxwP0gGjC9Y01B0sqJXtJmuoip9W0m9CJGPSiIJD+4Hbn4YnKNZ/ERm7+SDWSPSyy3WaYpssoOe659oy3TAloA2HkaZf1vDrBM+8brAxtTLPC9gwYWan6Sg3fC0C2+a14ANBjwoGfURbzH8Z4HY9VJQo9aZ6JVOkh5Ii4ZV0az2ReS7pc6vGcZLWdBlP/ykIiBcBvxRvwWNjzanFhARKSKzIOmxmQvfjtS3xB8UYWW6YeNGvnLXJib4gMmJIQhFe/voC2MWHTYpaSxv0=
+# yamllint enable rule:line-length
