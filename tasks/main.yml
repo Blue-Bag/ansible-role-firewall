@@ -7,6 +7,7 @@
   command: "modprobe ip6table_filter"
   become: true
   ignore_errors: true
+  when: firewall_modprobe
 
 - import_tasks: badips.yml
   when: firewall_block_badips
@@ -118,6 +119,7 @@
 
 - block:
     - name: get the output for systemd
+      # noqa 303
       command: "systemctl status firewall.service"
       register: sysdoutput
 
