@@ -1,6 +1,7 @@
 ---
+
 - name: Check if firewalld package is installed (on RHEL).
-  shell: yum list installed firewalld
+  command: yum list installed firewalld
   args:
     warn: false
   register: firewalld_installed
@@ -21,7 +22,7 @@
     - firewalld_installed.rc == 0
 
 - name: Check if ufw package is installed (on Ubuntu).
-  shell: service ufw status
+  command: service ufw status
   args:
     warn: false
   register: ufw_installed
