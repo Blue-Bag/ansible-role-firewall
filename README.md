@@ -164,16 +164,17 @@ Chains are used to group rules for specific ports to allow:
 This mode also makes use of IPSETs to manage long lists of blocked ips, lists of allowed ips etc
 
 In chain mode the role also allows for other blocks such as security precautions.
-
+firewall_allowlist_ips
+Make sure that the ansible control machine is in this list or you may block yourself!!
 ```
-firewall_allowlist:
-
-- { name: 'local', ip: "192.168.100.1" }
+fw_acl_a_ip:
+ - { name: 'local', ip: "192.168.100.1" }
 ```
 A list of IPs that will be allowed
+firewall_denylist
 ```
-firewall_denylist:
-- { name: 'Some rogue', ip: "96.47.225.0/24" }
+fw_acl_d_ip:
+ - { name: 'Some rogue', ip: "96.47.225.0/24" }
 ```
 A list of IPs that will be blocked
 
@@ -193,37 +194,46 @@ access to all ports
 Note that packets can be dropped or rejected.
 
 ```
-firewall_allowlist_ip:
+fw_acl_a_ip - firewall_allowlist_ip
   - {name: 'local', ip: "192.168.100.1"}
 ```
 You can specify a list of IPs to grant access to the server on all ports.
 The name is used as a comeent in IPsets and in the Firewall defintion
 
-`firewall_allowlist_net: []`
+```
+fw_acl_a_net - firewall_allowlist_net
+ - {name: 'local', ip: "192.168.100.1/28"}
+```
 Access lists can also be provided in CIDR format to provide network block Access
 Use with caution as you may grant access wider than intended.
 
-If you want to use IPsets you can specifc the names to be used for the AccessList IPset
-`firewall_allow_ipset: 'AccessAllow_ip'`
-When the firewall is 'built' the list of ips in the firewall_allowlist will be written to an external IPset of that name.
+If you want to use IPsets you can specify the names to be used for the AccessList IPset
+```
+fw_acl_a_ipset: 'AccessAllow_ip'`
+```
+When the firewall is 'built' the list of ips in the firewall_allowlist (fw_acl_a_ip) will be written to an external IPset of that name.
 
 Allowlists are a useful way of providing access to your various services/servers and users.
 One useful method is to compile a list of all of your web servers and adding them to the Allow list for your databases for example. This particularly useful for setting up a private network and granting access to load balancers etc
 You can specify a group in your inventory to be used a set to be added to the AllowList
 
-`firewall_allowlistgroup: "remote"` - select a host group from your inventory
+```
+fw_acl_a_group (firewall_allowlistgroup): "remote" - select a host group from your inventory
+```
 The Allow list is built up from a set of lists.
 
 You can also provide a specific list just for the chains that may be less 'trusted' than the trusted AccessList
 allowing access to the chains but not everything else
 
-`firewall_chain_al: "{{ firewall_allowlist }}"`
-`firewall_chain_al: "{{ firewall_allowlist }}"`
+```
+fw_acl_a_chain: "{{ fw_acl_a_ip }}"`
+```
 
  It is possible also to maintain a list  of Denied ips.
- However it is better t use the blocklists discussed later as these lists can get very long!
+ However it is better to use the blocklists discussed later as these lists can get very long!
+
  ```
- firewall_denylist:
+ fw_acl_d_ip:
   - {name: 'Some rogue', ip: "96.47.225.0/24"}
 ```
 Note: Ips can be specified as both Ips and CIDR nets
@@ -315,7 +325,7 @@ This is more efficient as a banned ip will get blocked early on on a revisit and
 
 `firewall_ipset_timeout: 2073600` - The default timeout for DenyList ipsets
 
-`firewall_ipset_bl_maxelem: 100000` - The default max elements for a DenyList
+`firewall_ipset_acl_d_maxelem: 100000` - The default max elements for a DenyList
 
 ### Managing an using blocklists
 Create lists, for network blocks and single IP addresses
@@ -384,9 +394,9 @@ service to report on - we want all of ours
 ##  Cloudflare
 You can specif a list of trusted ips such as Cloudflare.
 This will stop blocking of cloudflare traffic
-`firewall_whitelist_cf: false`
+`fw_acl_a_cf: false`
 
-`firewall_cf_ipset: 'whitelist_cf'`
+`firewall_cf_ipset: 'allowlist_cf'`
 
 
 ## IPset

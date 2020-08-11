@@ -52,14 +52,14 @@
   block:
     - name: Setfact for ipsets to destroy
       set_fact:
-         _ipsets_to_delete: "{{ _ipset_list_names['stdout_lines']  | intersect(firewall_ipsets_delete) }}"
+        _ipsets_to_delete: "{{ _ipset_list_names['stdout_lines']  | intersect(firewall_ipsets_delete) }}"
 
-  # note this will fail of the firewall is running
-    - name: Delete other ipsets
-      command: 'ipset destroy {{ item }}'
-      changed_when: false
-      loop: "{{ _ipsets_to_delete }}"
-      ignore_errors: true
+# note this will fail if the firewall is running
+- name: Delete other ipsets
+  command: 'ipset destroy {{ item }}'
+  changed_when: false
+  loop: "{{ _ipsets_to_delete }}"
+  ignore_errors: true
   when:
-   - _ipset_list_names['stdout_lines'] | length > 0
-   - firewall_ipsets_delete
+    - _ipset_list_names['stdout_lines'] | length > 0
+    - firewall_ipsets_delete

@@ -63,11 +63,11 @@ iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 {% if firewall_ipset %}
 {% include 'firewall-ipset.j2' %}
 {% else %}
-{% if firewall_whitelist is defined %}
+{% if fw_acl_a_ip is defined %}
 # create a whiter than white list chain
 iptables -N IP_WTWhitelist
 #Create whitelist
-{% for wl in firewall_whitelist %}
+{% for wl in fw_acl_a_ip %}
 iptables -I IP_WTWhitelist -s {{ wl.ip }} -j ACCEPT
 {% endfor %}
 iptables -I INPUT -p tcp -m tcp  -m state --state NEW -j IP_WTWhitelist
@@ -154,26 +154,26 @@ iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --s
 {% endif %}
 {% endfor %}
 
-#Create whitelist
-{% for wl in firewall_whitelist %}
-# {{ wl.name }}
-iptables -A IP_Whitelist -s {{ wl.ip }} -j ACCEPT
+#Create Allowlist
+{% for acl in fw_acl_a_ip %}
+# {{ acl.name }}
+iptables -A IP_Allowlist -s {{ acl.ip }} -j ACCEPT
 {% endfor %}
 
-{% for val in firewall_allowed_ips %}
+{% for val in _firewall_allowed_ips %}
 # allowed
-iptables -A IP_Whitelist -s {{ val }} -j ACCEPT
+iptables -A IP_Allowlist -s {{ val }} -j ACCEPT
 {% endfor %}
 
-#Create Blacklist
-{% for bl in firewall_blacklist %}
-# {{ bl.name }}
-iptables -A IP_Blacklist -s {{ bl.ip }} -p tcp -m tcp -m state --state NEW -j IP_BlacklistLOG
+#Create Denylist
+{% for dl in fw_acl_d_ip %}
+# {{ dl.name }}
+iptables -A IP_Denylist -s {{ dl.ip }} -p tcp -m tcp -m state --state NEW -j IP_DenylistLOG
 {% endfor %}
 
-#Create Blacklist log
-iptables -A IP_BlacklistLOG -p tcp -m tcp  -m state --state NEW -m recent --update --rttl  --rsource -j LOG  --log-prefix "iptables[BL Attempt]: " --log-level {{ firewall_log_level }}
-iptables -A IP_BlacklistLOG -p tcp -m tcp  -m state --state NEW -j DROP
+#Create Denylist log
+iptables -A IP_DenylistLOG -p tcp -m tcp  -m state --state NEW -m recent --update --rttl  --rsource -j LOG  --log-prefix "iptables[DL Attempt]: " --log-level {{ firewall_log_level }}
+iptables -A IP_DenylistLOG -p tcp -m tcp  -m state --state NEW -j DROP
 
 
 ###############################################################################

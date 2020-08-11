@@ -66,20 +66,28 @@ firewall_disable_firewalld: false
 firewall_disable_ufw: false
 
 # =======================   chain config
-
-firewall_whitelist:
+# Allow and Deny Lists
+# previously called firewall_whitelist
+fw_acl_a_ip:
   - {name: 'local', ip: "192.168.100.1"}
-firewall_whitelist_net: []
 
-firewall_whitelist_ipset: 'whitelist_wwl'
+# previously firewall_whitelist_net
+fw_acl_a_net: []
 
-# firewall_whitelistgroup: []
-firewall_chain_wl: "{{ firewall_whitelist }}"
+# previously firewall_whitelist_ipset
+fw_acl_a_ipset: 'acl_trusted'
 
-firewall_blacklist:
+# previously firewall_whitelistgroup
+# fw_acl_a_group: []
+
+# previously firewall_chain_wl
+fw_acl_a_chain: "{{ fw_acl_a_ip }}"
+
+# previously firewall_blacklist
+fw_acl_d_ip:
   - {name: 'Some rogue', ip: "96.47.225.0/24"}
 
-# provide a list of ipsets to delete
+# provide a list of old ipsets to delete
 firewall_ipsets_delete:
   - 'whitelist_wwl'
   - 'whitelist_wwl-net'
@@ -142,7 +150,9 @@ firewall_ipset: false
 firewall_reban_hosts: true
 firewall_reban_list: 'banned-hosts'
 firewall_ipset_timeout: 2073600
-firewall_ipset_bl_maxelem: 250000
+
+# previously firewall_ipset_bl_maxelem	firewall_ipset_dl_maxelem	fw_acl_d_ipset_maxelem
+fw_acl_d_ipset_maxelem: 250000
 
 # Create lists, for network blocks and single IP addresses
 # hash:net = Networks
@@ -187,5 +197,7 @@ firewall_badips_folder: '/usr/share/badips'
 firewall_badips_db: '/usr/share/badips/badips.db'
 
 # =======================  Cloudflare
-firewall_whitelist_cf: false
-firewall_cf_ipset: 'whitelist_cf'
+
+# previously firewall_whitelist_cf
+fw_acl_a_cf: false
+firewall_cf_ipset: 'allowlist_cf'
