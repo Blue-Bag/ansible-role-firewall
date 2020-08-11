@@ -2,7 +2,7 @@
 # iptables firewall for common LAMP servers.
 #
 # Adapted from Jeff Geerling's firewall
-# to allow for chains and whitelists
+# to allow for chains and Allow and Deny lists
 #
 # This file should be located at /etc/firewall.bash, and is meant to work with
 # Jeff Geerling's firewall init script.
@@ -55,22 +55,22 @@ iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 # iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 ###############################################################################
-# 1. Whitelists and IPSETs                                                    #
+# 1. AccessControl lists (ACL) and IPSETs                                     #
 #                                                                             #
-# Set up whitellists and block lists before we do any accepting and blocking  #
+# Set up Allow and Deny lists before we do any accepting and blocking         #
 ###############################################################################
 
 {% if firewall_ipset %}
 {% include 'firewall-ipset.j2' %}
 {% else %}
 {% if fw_acl_a_ip is defined %}
-# create a whiter than white list chain
-iptables -N IP_WTWhitelist
-#Create whitelist
-{% for wl in fw_acl_a_ip %}
-iptables -I IP_WTWhitelist -s {{ wl.ip }} -j ACCEPT
+# create a trusted allow list chain
+iptables -N IP_ACLAllowlist
+#Create Allowlist
+{% for acl in fw_acl_a_ip %}
+iptables -I IP_ACLAllowlist -s {{ acl.ip }} -j ACCEPT
 {% endfor %}
-iptables -I INPUT -p tcp -m tcp  -m state --state NEW -j IP_WTWhitelist
+iptables -I INPUT -p tcp -m tcp  -m state --state NEW -j IP_ACLAllowlist
 {% endif %}
 {% endif %}
 ###############################################################################
@@ -107,9 +107,9 @@ iptables -t nat -I OUTPUT -p udp -o lo --dport {{ forwarded_port.src }} -j REDIR
 iptables -N {{ chain.name }}
 {% endfor %}
 
-iptables -N IP_Whitelist
-iptables -N IP_Blacklist
-iptables -N IP_BlacklistLOG
+iptables -N IP_Allowlist
+iptables -N IP_Denylist
+iptables -N IP_DenylistLOG
 
 {# Add a rule for each chain #}
 {% for chain in firewall_protected_chains %}
@@ -120,9 +120,9 @@ iptables -A INPUT -p tcp -m tcp --dport {{ chain.port }} -m state --state {{ cha
 {# Add a rule for each chain #}
 {% for chain in firewall_protected_chains %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --set --name {{ chain.name }} --rsource
-iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Whitelist
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Allowlist
 {% if chain.default == 'ACCEPT'  %}
-iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Blacklist
+iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Denylist
 {% else %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "iptables[{{ chain.name }} Attempt]: " --log-level {{ firewall_log_level }}
 {% if firewall_ipset and firewall_reban_hosts %}
