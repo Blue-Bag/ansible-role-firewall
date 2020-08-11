@@ -9,6 +9,14 @@ IPCMD=$(command -v ipset)
 TIMEOUT={{ firewall_ipset_timeout }}
 MAXELEM={{ firewall_ipset_bl_maxelem | default('250000') }}
 
+{% if firewall_clear_ipsets %}
+  {% for ipset in _ipsets_to_delete %}
+# drop all existing sets
+"$IPCMD" destroy {{ ipset }}
+  {% endfor -%}
+{% endif %}
+
+
 # simple ipset create
 function createIPSET {
   IPSET=$1

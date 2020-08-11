@@ -15,6 +15,13 @@ firewall_enabled_at_boot: true
 
 firewall_flush_rules_and_chains: true
 
+# we may ewant to clear all ipsets
+# generally no as we can do that in the play and not
+# every time the firewall restarts
+firewall_clear_ipsets: false
+# we can clear all ipsets when runing the play
+firewall_clear_existing_ipsets: false
+
 # =======================   simple config
 firewall_allowed_tcp_ports:
   - "22"
@@ -71,6 +78,11 @@ firewall_chain_wl: "{{ firewall_whitelist }}"
 
 firewall_blacklist:
   - {name: 'Some rogue', ip: "96.47.225.0/24"}
+
+# provide a list of ipsets to delete
+firewall_ipsets_delete:
+  - 'whitelist_wwl'
+  - 'whitelist_wwl-net'
 
 firewall_ddos_rate: '150/second'
 firewall_ddos_burst: '160'
