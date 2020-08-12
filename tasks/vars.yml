@@ -1,0 +1,51 @@
+---
+
+# convert old vars to new
+
+- name: Convert firewall_whitelist
+  set_fact:
+    fw_acl_a_ip: "{{ firewall_whitelist }}"
+  when:
+    - firewall_whitelist is defined
+
+- name: Convert firewall_whitelist_net
+  set_fact:
+    fw_acl_a_net: "{{ firewall_whitelist_net }}"
+  when:
+    - firewall_whitelist_net is defined
+
+- name: Convert firewall_whitelist_ipset
+  set_fact:
+    fw_acl_a_ipset: "{{ firewall_whitelist_ipset }}"
+  when:
+    - firewall_whitelist_ipset is defined
+
+- name: Convert firewall_whitelistgroup
+  set_fact:
+    fw_acl_a_group: "{{ firewall_whitelistgroup }}"
+  when:
+    - firewall_whitelistgroup is defined
+
+- name: Convert firewall_chain_wl
+  set_fact:
+    fw_acl_a_chain: "{{ firewall_chain_wl }}"
+  when:
+    - firewall_chain_wl is defined
+
+- name: Convert firewall_blacklist
+  set_fact:
+    fw_acl_d_ip: "{{ firewall_blacklist }}"
+  when:
+    - firewall_blacklist is defined
+
+- name: Convert firewall_ipset_bl_maxelem
+  set_fact:
+    fw_acl_d_ipset_maxelem: "{{ firewall_ipset_bl_maxelem }}"
+  when:
+    - firewall_ipset_bl_maxelem is defined
+
+- name: Convert firewall_whitelist_cf
+  set_fact:
+    fw_acl_d_ipset_maxelem: "{{ firewall_whitelist_cf }}"
+  when:
+    - firewall_whitelist_cf is defined

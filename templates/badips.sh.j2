@@ -14,7 +14,7 @@ _key={{ badips_key }}           # badips key to get list from
 # Get the bad IPs
 wget -qO- "http://www.badips.com/get/list/${_service}/$_level/apidoc?key=${_key}&format=ipset" > $_input || { echo "$0: Unable to download ip list."; exit 1; }
 
-### Setup our black list ###
+### Setup our Deny list ###
 # First flush it
 # we cant destroy it as it is in use
 # so we have to drop the iptables rule that uses it

@@ -1,4 +1,9 @@
 ---
+
+# convert old var names
+- import_tasks: vars.yml
+  when: firewall_whitelist is defined
+
 - name: Ensure iptables is installed.
   package: name=iptables state=present
 
@@ -7,6 +12,7 @@
   command: "modprobe ip6table_filter"
   become: true
   ignore_errors: true
+  when: firewall_modprobe
 
 - import_tasks: badips.yml
   when: firewall_block_badips
@@ -38,25 +44,31 @@
 # note this needs the fetchlistfromdict filter plugin to work
 - name: Setfact for allowed ips list for chain script
   set_fact:
-    group_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[firewall_whitelistgroup])|map(attribute='ansible_ssh_host')|list|unique }}"
+    _group_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[fw_acl_a_group])|map(attribute='ansible_ssh_host')|list|unique }}"
   when:
     - firewall_mode == 'chain'
-    - firewall_whitelistgroup is defined
+    - fw_acl_a_group is defined
 
 - name: Setfact for allowed ips2 list for chain script
   set_fact:
-    firewall_chain_whitelist: "{{ firewall_chain_wl|map(attribute='ip')|list|unique }}"
+    _firewall_chain_allowlist: "{{ fw_acl_a_chain|map(attribute='ip')|list|unique }}"
   when:
     - firewall_mode == 'chain'
-    - firewall_whitelistgroup is defined
+    - fw_acl_a_group is defined
 
-- name: Create master whitelist for script
+- name: Create master Allowlist for script
   set_fact:
-    firewall_allowed_ips: "{{ group_allowed_ips | union(firewall_chain_whitelist | unique) }}"
+    _firewall_allowed_ips: "{{ _group_allowed_ips | union(_firewall_chain_allowlist | unique) }}"
   when:
     - firewall_mode == 'chain'
-    - firewall_whitelistgroup is defined
+    - fw_acl_a_group is defined
 
+- name: Create master Allowlist for script
+  set_fact:
+    _firewall_allowed_ips: "{{ fw_acl_a_ip }}"
+  when:
+    - firewall_mode == 'chain'
+    - fw_acl_a_group is not defined
 
 - name: Copy firewall chain script into place.
   template:
@@ -118,6 +130,7 @@
 
 - block:
     - name: get the output for systemd
+      # noqa 303
       command: "systemctl status firewall.service"
       register: sysdoutput
 

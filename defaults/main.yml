@@ -7,11 +7,20 @@ firewall_iptables_save: false
 
 # sometimes we need to see why systemd failed
 firewall_debug: false
+#
+firewall_modprobe: false
 
 firewall_state: started
 firewall_enabled_at_boot: true
 
 firewall_flush_rules_and_chains: true
+
+# we may ewant to clear all ipsets
+# generally no as we can do that in the play and not
+# every time the firewall restarts
+firewall_clear_ipsets: false
+# we can clear all ipsets when runing the play
+firewall_clear_existing_ipsets: false
 
 # =======================   simple config
 firewall_allowed_tcp_ports:
@@ -57,18 +66,32 @@ firewall_disable_firewalld: false
 firewall_disable_ufw: false
 
 # =======================   chain config
-
-firewall_whitelist:
+# Allow and Deny Lists
+# previously called firewall_whitelist
+# see readme for this
+fw_acl_a_ip:
   - {name: 'local', ip: "192.168.100.1"}
-firewall_whitelist_net: []
 
-firewall_whitelist_ipset: 'whitelist_wwl'
+# previously firewall_whitelist_net
+fw_acl_a_net: []
 
-# firewall_whitelistgroup: []
-firewall_chain_wl: "{{ firewall_whitelist }}"
+# previously firewall_whitelist_ipset
+fw_acl_a_ipset: 'acl_trusted'
 
-firewall_blacklist:
+# previously firewall_whitelistgroup
+# fw_acl_a_group: []
+
+# previously firewall_chain_wl
+fw_acl_a_chain: "{{ fw_acl_a_ip }}"
+
+# previously firewall_blacklist
+fw_acl_d_ip:
   - {name: 'Some rogue', ip: "96.47.225.0/24"}
+
+# provide a list of old ipsets to delete
+firewall_ipsets_delete:
+  - 'whitelist_wwl'
+  - 'whitelist_wwl-net'
 
 firewall_ddos_rate: '150/second'
 firewall_ddos_burst: '160'
@@ -128,7 +151,9 @@ firewall_ipset: false
 firewall_reban_hosts: true
 firewall_reban_list: 'banned-hosts'
 firewall_ipset_timeout: 2073600
-firewall_ipset_bl_maxelem: 100000
+
+# previously firewall_ipset_bl_maxelem	firewall_ipset_dl_maxelem	fw_acl_d_ipset_maxelem
+fw_acl_d_ipset_maxelem: 250000
 
 # Create lists, for network blocks and single IP addresses
 # hash:net = Networks
@@ -173,5 +198,7 @@ firewall_badips_folder: '/usr/share/badips'
 firewall_badips_db: '/usr/share/badips/badips.db'
 
 # =======================  Cloudflare
-firewall_whitelist_cf: false
-firewall_cf_ipset: 'whitelist_cf'
+
+# previously firewall_whitelist_cf
+fw_acl_a_cf: false
+firewall_cf_ipset: 'allowlist_cf'

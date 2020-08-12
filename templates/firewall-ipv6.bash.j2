@@ -22,7 +22,7 @@ if [ -x "$(which ip6tables 2>/dev/null)" ]; then
 # Set up default policies
   ip6tables -P INPUT DROP
   ip6tables -P FORWARD DROP
-# some services like reCaptcha will use IPv6 so allow output or whitelist
+# some services like reCaptcha will use IPv6 so allow output or allowlist
   ip6tables -P OUTPUT ACCEPT
 
 

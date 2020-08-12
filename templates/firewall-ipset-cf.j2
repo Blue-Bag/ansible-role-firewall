@@ -1,5 +1,5 @@
 
-#################   Cloudflare Whitelist #####################
+#################   Cloudflare Allowlisting #####################
 # it is possible that CF ip ranges may change so we could create a timeout list
 # for now we creat a simple list
 createIPSET "{{ firewall_cf_ipset }}" "hash:net"
@@ -7,7 +7,7 @@ createIPSET "{{ firewall_cf_ipset }}" "hash:net"
 # Now populate the set with Cloudflare IP ranges:
 for x in $(curl https://www.cloudflare.com/ips-v4); do "$IPCMD" add {{ firewall_cf_ipset }} $x; done
 
-# Whitelsit cloudflare traffic
+# Allow cloudflare traffic
 iptables -A INPUT -m set --match-set {{ firewall_cf_ipset }} src -p tcp -m multiport --dports http,https -j ACCEPT
 
-##################  end CF whitelisting #######################
+##################  end CF Allowlisting #######################

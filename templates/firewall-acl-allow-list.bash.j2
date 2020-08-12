@@ -1,0 +1,26 @@
+
+
+#################   Default AllowList ipsets  #####################
+
+$IPCMD destroy "{{ fw_acl_a_ipset }}"
+createIPSET "{{ fw_acl_a_ipset }}" "hash:ip"
+
+$IPCMD destroy "{{ fw_acl_a_ipset }}-net"
+createIPSET "{{ fw_acl_a_ipset }}-net" "hash:net"
+
+
+# Now populate the set with Allowed IPs:
+
+{% for acl_ip in fw_acl_a_ip %}
+"$IPCMD" add {{ fw_acl_a_ipset }} {{ acl_ip.ip }} comment "{{ acl_ip.name }}"
+{% endfor %}
+
+{% for acl_net in fw_acl_a_net %}
+"$IPCMD" add {{ fw_acl_a_ipset }}-net {{ acl_net.ip }}
+{% endfor %}
+
+# Allow traffic
+iptables -I INPUT  -m set --match-set {{ fw_acl_a_ipset }}-net src -p tcp  -j ACCEPT
+iptables -I INPUT  -m set --match-set {{ fw_acl_a_ipset }} src -p tcp  -j ACCEPT
+
+##################  end AllowList ipsets #######################

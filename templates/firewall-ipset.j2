@@ -7,7 +7,15 @@ IPCMD=$(command -v ipset)
 # 24 days 2073600
 # current max is 24 days - see https://marc.info/?l=netfilter-devel&m=141337202317570&w=2
 TIMEOUT={{ firewall_ipset_timeout }}
-MAXELEM={{ firewall_ipset_bl_maxelem | default('100000') }}
+MAXELEM={{ fw_acl_d_ipset_maxelem | default('250000') }}
+
+{% if firewall_clear_ipsets %}
+  {% for ipset in _ipsets_to_delete %}
+# drop all existing sets
+"$IPCMD" destroy {{ ipset }}
+  {% endfor -%}
+{% endif %}
+
 
 # simple ipset create
 function createIPSET {
@@ -101,11 +109,11 @@ $IPCMD restore < "$IPSET-restore"
 #################   End of functions #####################
 #################     Build Ipsets   #####################
 
-{% if firewall_whitelist is defined %}
-{% include 'firewall-whitelist.bash.j2' %}
+{% if fw_acl_a_ip is defined %}
+{% include 'firewall-acl-allow-list.bash.j2' %}
 {% endif %}
 
-{% if firewall_whitelist_cf %}
+{% if fw_acl_a_cf %}
 {% include 'firewall-ipset-cf.j2' %}
 {% endif %}
 
