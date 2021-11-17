@@ -2,7 +2,7 @@
 
 
 # Ansible Role: Firewall (iptables)
-  [![Build Status](https://travis-ci.org/Blue-Bag/ansible-role-firewall.svg?branch=master)](https://travis-ci.org/Blue-Bag/ansible-role-firewall)
+  [![Build Status](https://travis-ci.org/Blue-Bag/ansible-role-firewall.svg?branch=master)](https://travis-ci.org/Blue-Bag/ansible-role-firewall) <a href="https://github.com/andreasbm/readme/graphs/commit-activity"><img alt="Maintained" src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" height="20"/></a> ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/Blue-Bag/ansible-role-firewall/dev?style=for-the-badge) ![GitHub issues](https://img.shields.io/github/issues/Blue-Bag/ansible-role-firewall?style=for-the-badge)
 
 This role is based on the Ansible Firewall role by Jeff Geerling which
 > installs a simple iptables-based firewall for RHEL/CentOS or Debian/Ubuntu systems.
@@ -410,7 +410,7 @@ Once the firewall is operational you can add to the ipsets to block an ip
 
 `cat blocked-ips.txt | sort -n | uniq > blocked-ips.txt`
 
-Note about filtering out Alloed ipsfrom blockllists
+Note about filtering out Allowed ips from blockllists
 {To_do}
 
 ## Dependencies

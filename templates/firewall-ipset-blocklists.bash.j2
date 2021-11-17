@@ -14,7 +14,8 @@ iptables -A blocked_traffic -j LOG  --log-level {{ firewall_log_level }} --log-p
 iptables -A blocked_traffic -j DROP
 #2 Create the rules in the INPUT chain to check for incoming traffic
 # that matches the sets
-{% for list in firewall_blocklists %}
+
+{% for list in firewall_blocklists if list.global | bool %}
 iptables -I INPUT 3 -m set --match-set {{ list.name }} src -j blocked_traffic
 {% endfor %}
 
@@ -25,13 +26,22 @@ iptables -I INPUT 3 -m set --match-set {{ list.name }} src -j blocked_traffic
 createIPSET-Timeout "{{ firewall_reban_list }}" "hash:ip" "604800"
 # create a chain to add to the list
 iptables -N IP_Add2bannedhosts
+
+# don't reban ips on the allow lists
+{% if fw_acl_a_ip is defined %}
+iptables -A IP_Add2bannedhosts -m set --match-set {{ fw_acl_a_ipset }} src -j RETURN
+iptables -A IP_Add2bannedhosts -m set --match-set {{ fw_acl_a_ipset }}-net src -j RETURN
+{% endif %}
+{% if fw_acl_a_cf %}
+iptables -A IP_Add2bannedhosts -m set --match-set {{ firewall_cf_ipset }} src -j RETURN
+{% endif %}
 iptables -A IP_Add2bannedhosts -j SET --add-set {{ firewall_reban_list }} src --exist
 # match src against banned hosts lists
 iptables -I INPUT 4 -m set --match-set {{ firewall_reban_list }} src -j blocked_traffic
 {% endif %}
 
 
-{% for list in firewall_blocklists if list.persist %}
+{% for list in firewall_blocklists if list.persist | bool %}
 readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}" "{{ list.timeout }}"
 {% endfor %}
 

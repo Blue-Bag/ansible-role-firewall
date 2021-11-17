@@ -12,6 +12,7 @@ IPCMD=$(command -v ipset)
 # 24 days 2073600
 # current max is 24 days - see https://marc.info/?l=netfilter-devel&m=141337202317570&w=2
 TIMEOUT=2073600
+MAXELEM=250000
 
 # read in the iplists
 function readIPLIST {
@@ -55,6 +56,6 @@ ipset restore < $IPSET-restore
 }
 
 
-{% for list in firewall_blocklists %}
+{% for list in firewall_blocklists if list.persist | bool %}
 readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}"
 {% endfor %}

@@ -19,8 +19,11 @@ firewall_flush_rules_and_chains: true
 # generally no as we can do that in the play and not
 # every time the firewall restarts
 firewall_clear_ipsets: false
-# we can clear all ipsets when runing the play
+# we can clear all ipsets when running the play
 firewall_clear_existing_ipsets: false
+
+# we don't have to replace the blocklist every run
+firewall_push_blocklists: true
 
 # =======================   simple config
 firewall_allowed_tcp_ports:
@@ -104,7 +107,8 @@ firewall_protected_chains:
     default: "ACCEPT",
     ratelimit: "True",
     hit_rate: 4,
-    hit_ttl: 3600
+    hit_ttl: 3600,
+    ipset: "blocked-ssh"
   }
   - {
     port: "10000",
@@ -160,12 +164,17 @@ fw_acl_d_ipset_maxelem: 250000
 # hash:ip = single IPs
 # if using a local job to update lists then
 # set these to your locally generated list
+#
+# persist - they wil get read on a firewall restart
+# scope: global (all ports), chain (specific for a chain)
+#
 firewall_blocklists:
   - {
     name: blocked-nets,
     type: 'hash:net',
     src: 'blocked-nets.txt',
     persist: true,
+    global: true,
     timeout: "{{ firewall_ipset_timeout }}"
   }
   - {
@@ -173,6 +182,15 @@ firewall_blocklists:
     type: 'hash:ip',
     src: 'blocked-ips.txt',
     persist: true,
+    global: true,
+    timeout: "{{ firewall_ipset_timeout }}"
+  }
+  - {
+    name: blocked-ssh,
+    type: 'hash:net',
+    src: 'blocked-ssh.txt',
+    persist: false,
+    global: false,
     timeout: "{{ firewall_ipset_timeout }}"
   }
   # - {

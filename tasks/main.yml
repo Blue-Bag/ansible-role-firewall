@@ -56,19 +56,23 @@
     - firewall_mode == 'chain'
     - fw_acl_a_group is defined
 
+# Make a master list of allowed ips but exclude those from the fw_acl_a_ip
 - name: Create master Allowlist for script
   set_fact:
-    _firewall_allowed_ips: "{{ _group_allowed_ips | union(_firewall_chain_allowlist | unique) }}"
+    _firewall_allowed_ips: "{{ _group_allowed_ips | union(_firewall_chain_allowlist | unique) | difference(fw_acl_a_ip|map(attribute='ip')|list|unique)|unique}}"
   when:
     - firewall_mode == 'chain'
     - fw_acl_a_group is defined
 
 - name: Create master Allowlist for script
   set_fact:
-    _firewall_allowed_ips: "{{ fw_acl_a_ip }}"
+    _firewall_allowed_ips: "{{ fw_acl_a_ip|map(attribute='ip')|list|unique }}"
   when:
     - firewall_mode == 'chain'
     - fw_acl_a_group is not defined
+
+
+
 
 - name: Copy firewall chain script into place.
   template:
