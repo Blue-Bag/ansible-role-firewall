@@ -16,7 +16,7 @@ createIPSET "{{ fw_acl_a_ipset }}-net" "hash:net"
 {% endfor %}
 
 {% for acl_net in fw_acl_a_net %}
-"$IPCMD" add {{ fw_acl_a_ipset }}-net {{ acl_net.ip }}
+"$IPCMD" add {{ fw_acl_a_ipset }}-net {{ acl_net.ip }} comment "{{ acl_net.name }}"
 {% endfor %}
 
 # Allow traffic

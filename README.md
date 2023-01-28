@@ -198,7 +198,7 @@ fw_acl_a_ip - firewall_allowlist_ip
   - {name: 'local', ip: "192.168.100.1"}
 ```
 You can specify a list of IPs to grant access to the server on all ports.
-The name is used as a comeent in IPsets and in the Firewall defintion
+The name is used as a comment in IPsets and in the Firewall defintion
 
 ```
 fw_acl_a_net - firewall_allowlist_net

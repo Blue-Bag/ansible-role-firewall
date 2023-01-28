@@ -81,6 +81,16 @@ fw_acl_a_net: []
 # previously firewall_whitelist_ipset
 fw_acl_a_ipset: 'acl_trusted'
 
+# A list to allow traffic for http(s)
+# This can be used to allow Cloudflare ips etc
+fw_acl_a_net_http: []
+# - {name: 'cloudflare', ip: "131.0.72.0/22", family: 4}
+# - {name: 'cloudflare', ip: "2400:cb00::/32", family: 6}
+
+
+fw_acl_a_ipset_http: 'acl_trusted_http'
+
+
 # previously firewall_whitelistgroup
 # fw_acl_a_group: []
 
@@ -219,4 +229,5 @@ firewall_badips_db: '/usr/share/badips/badips.db'
 
 # previously firewall_whitelist_cf
 fw_acl_a_cf: false
-firewall_cf_ipset: 'allowlist_cf'
+fw_acl_cf_ipset: 'acl_trusted_cf'
+fw_acl_cf_ipset6: 'acl_trusted6_cf'
