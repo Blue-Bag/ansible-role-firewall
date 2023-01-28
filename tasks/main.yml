@@ -146,7 +146,7 @@
     - firewall_debug
     - ansible_service_mgr == 'systemd'
 
-- include: disable-other-firewalls.yml
+- include_tasks: disable-other-firewalls.yml
   when: firewall_disable_firewalld or firewall_disable_ufw
 
 - name: save iptables
