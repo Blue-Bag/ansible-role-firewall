@@ -1,0 +1,28 @@
+
+- name: Ensure /etc/iptables directory exists.
+  ansible.builtin.file:
+    path: /etc/iptables
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  tags: [iptables_save]
+
+- name: Save current iptables rules (pre-run backup).
+  ansible.builtin.shell: |
+    iptables-save > /etc/iptables/rules.v4.backup
+    ip6tables-save > /etc/iptables/rules.v6.backup
+  changed_when: false
+  args:
+    creates: /etc/iptables/rules.v4.backup
+  tags: [iptables_save]
+
+- name: Save current ipsets (pre-run backup).
+  ansible.builtin.shell: |
+    ipset save {{ fw_acl_a_ipset }} > /etc/iptables/ipset-{{ fw_acl_a_ipset }}.save
+    ipset save {{ fw_acl_a_ipset }}-net > /etc/iptables/ipset-{{ fw_acl_a_ipset }}-net.save
+  changed_when: false
+  args:
+    creates: "/etc/iptables/ipset-{{ fw_acl_a_ipset }}.save"
+  failed_when: false
+  tags: [iptables_save]

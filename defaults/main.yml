@@ -3,7 +3,7 @@
 firewall_mode: 'simple'
 firewall_backup_cfg: false
 # export the rules (won't be idempotent)
-firewall_iptables_save: false
+firewall_iptables_save: true
 
 # sometimes we need to see why systemd failed
 firewall_debug: false

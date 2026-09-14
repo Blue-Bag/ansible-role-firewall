@@ -1,6 +1,5 @@
-
-#parseable: true
-#quiet: true
-#skip_list:
+# parseable: true
+# quiet: true
+# skip_list:
 use_default_rules: true
-#verbosity: 1
+# verbosity: 1

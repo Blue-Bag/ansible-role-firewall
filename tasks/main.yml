@@ -1,5 +1,11 @@
 ---
 
+
+- import_tasks: iptables-backup.yml
+  when: firewall_iptables_save
+  tags: [iptables_save]
+
+
 # convert old var names
 - import_tasks: vars.yml
   when: firewall_whitelist is defined
@@ -34,7 +40,7 @@
     mode: 0744
     backup: "{{ firewall_backup_cfg }}"
   when: firewall_mode == 'simple'
-  notify: restart firewall
+  notify: Restart firewall
 
 # - name: Show the list of inv_ip_list
 #   debug:
@@ -83,7 +89,7 @@
     mode: 0744
     backup: "{{ firewall_backup_cfg }}"
   when: firewall_mode == 'chain'
-  notify: restart firewall
+  notify: Restart firewall
 
 - name: Copy firewall init script into place.
   template:
@@ -92,7 +98,7 @@
     owner: root
     group: root
     mode: 0755
-  when: "ansible_service_mgr != 'systemd'"
+  when: ansible_facts['service_mgr'] != 'systemd'
 
 
 - block:
@@ -112,7 +118,7 @@
         state: stopped
         enabled: false
       when: oldfirewall.stat.exists
-  when: "ansible_service_mgr == 'systemd'"
+  when: ansible_facts['service_mgr'] == 'systemd'
   become: true
   become_user: root
 
@@ -123,7 +129,7 @@
     owner: root
     group: root
     mode: 0644
-  when: "ansible_service_mgr == 'systemd'"
+  when: ansible_facts['service_mgr'] == 'systemd'
 
 - name: Configure the firewall service.
   service:
@@ -144,13 +150,29 @@
         verbosity: 3
   when:
     - firewall_debug
-    - ansible_service_mgr == 'systemd'
+    - ansible_facts['service_mgr'] == 'systemd'
 
 - include_tasks: disable-other-firewalls.yml
   when: firewall_disable_firewalld or firewall_disable_ufw
 
-- name: save iptables
-  command: iptables-save > /etc/iptables.up.rules
-  become: true
-  changed_when: false
-  when: firewall_iptables_save
+# - name: save iptables
+#   command: iptables-save > /etc/iptables.up.rules
+#   become: true
+#   changed_when: false
+#   when: firewall_iptables_save
+
+- block:
+  - name: Save final iptables rules.
+    ansible.builtin.shell: |
+      iptables-save > /etc/iptables/rules.v4
+      ip6tables-save > /etc/iptables/rules.v6
+    changed_when: true
+
+  - name: Save final ipsets.
+    ansible.builtin.shell: |
+      ipset save {{ fw_acl_a_ipset }} > /etc/iptables/ipset-{{ fw_acl_a_ipset }}.save
+      ipset save {{ fw_acl_a_ipset }}-net > /etc/iptables/ipset-{{ fw_acl_a_ipset }}-net.save
+    changed_when: true
+
+  when: firewall_iptables_save  
+  tags: [iptables_save]

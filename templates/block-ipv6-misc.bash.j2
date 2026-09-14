@@ -9,7 +9,10 @@
   ip6tables -A INPUT -p udp --dport 1900 -j DROP
 
 # Do not log late replies from nameservers.
-  ip6tables -A INPUT -p udp --sport 53 -j DROP
+  #ip6tables -A INPUT -p udp --sport 53 -j DROP
+# allow established dns lookups and replies  
+  iptables -A INPUT -p tcp --sport 53 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+  iptables -A INPUT -p udp --sport 53 -m conntrack ! --ctstate ESTABLISHED,RELATED -j DROP
 
 # Good practise is to explicately reject AUTH traffic so that it fails fast.
   ip6tables -A INPUT -p tcp --dport 113 --syn -m conntrack --ctstate NEW -j REJECT --reject-with tcp-reset
