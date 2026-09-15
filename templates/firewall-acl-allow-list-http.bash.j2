@@ -1,0 +1,29 @@
+
+
+#################   HTTP(s) AllowList ipsets  #####################
+
+$IPCMD destroy "{{ fw_acl_a_ipset_http }}-net"
+createIPSET "{{ fw_acl_a_ipset_http }}-net" "hash:net"
+
+# create ipv6 versions
+$IPCMD destroy "{{ fw_acl_a_ipset_http }}6-net"
+createIPSET "{{ fw_acl_a_ipset_http }}6-net" "hash:net" family inet6
+
+
+# Now populate the set with Allowed HTTP IPs:
+
+{% for acl_net in fw_acl_a_net_http %}
+{% if acl_net.family == 6 %}
+"$IPCMD" add {{ fw_acl_a_ipset_http }}-net {{ acl_net.ip }} comment "{{ acl_net.name }}"
+{% else %}
+"$IPCMD" add {{ fw_acl_a_ipset_http }}6-net {{ acl_net.ip }} comment "{{ acl_net.name }}"
+{% endif %}
+{% endfor %}
+
+# Allow traffic
+# For IPv4 addresses
+iptables -I INPUT  -m set --match-set {{ fw_acl_a_ipset }}-net src -p tcp --dports http,https -j ACCEPT
+# For IPv6 addresses
+ip6tables -I INPUT  -m set --match-set {{ fw_acl_a_ipset }}-net src -p tcp --dports http,https -j ACCEPT
+
+##################  end AllowList ipsets #######################

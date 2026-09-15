@@ -2,7 +2,7 @@
 
 
 # Ansible Role: Firewall (iptables)
-  [![Build Status](https://travis-ci.org/Blue-Bag/ansible-role-firewall.svg?branch=master)](https://travis-ci.org/Blue-Bag/ansible-role-firewall)
+  [![Build Status](https://travis-ci.org/Blue-Bag/ansible-role-firewall.svg?branch=master)](https://travis-ci.org/Blue-Bag/ansible-role-firewall) <a href="https://github.com/andreasbm/readme/graphs/commit-activity"><img alt="Maintained" src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" height="20"/></a> ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/Blue-Bag/ansible-role-firewall/dev?style=for-the-badge) ![GitHub issues](https://img.shields.io/github/issues/Blue-Bag/ansible-role-firewall?style=for-the-badge)
 
 This role is based on the Ansible Firewall role by Jeff Geerling which
 > installs a simple iptables-based firewall for RHEL/CentOS or Debian/Ubuntu systems.
@@ -198,7 +198,7 @@ fw_acl_a_ip - firewall_allowlist_ip
   - {name: 'local', ip: "192.168.100.1"}
 ```
 You can specify a list of IPs to grant access to the server on all ports.
-The name is used as a comeent in IPsets and in the Firewall defintion
+The name is used as a comment in IPsets and in the Firewall defintion
 
 ```
 fw_acl_a_net - firewall_allowlist_net
@@ -410,7 +410,7 @@ Once the firewall is operational you can add to the ipsets to block an ip
 
 `cat blocked-ips.txt | sort -n | uniq > blocked-ips.txt`
 
-Note about filtering out Alloed ipsfrom blockllists
+Note about filtering out Allowed ips from blockllists
 {To_do}
 
 ## Dependencies

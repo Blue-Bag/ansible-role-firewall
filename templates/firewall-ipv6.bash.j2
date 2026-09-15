@@ -37,6 +37,10 @@ if [ -x "$(which ip6tables 2>/dev/null)" ]; then
 # Allow established connections:
 # ip6tables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
+#1 Create the Log chain and add the DROP rule to ip
+ip6tables -N blocked_6traffic
+ip6tables -A blocked_6traffic -j LOG  --log-level {{ firewall_log_level }} --log-prefix "ip6tables[Bad IP]: " -m limit --limit 15/minute
+ip6tables -A blocked_6traffic -j DROP
 
 ###############################################################################
 # 2. Security                                                                 #

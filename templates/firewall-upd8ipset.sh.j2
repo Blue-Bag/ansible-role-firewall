@@ -11,13 +11,15 @@ IPCMD=$(command -v ipset)
 # 1 month  2592000
 # 24 days 2073600
 # current max is 24 days - see https://marc.info/?l=netfilter-devel&m=141337202317570&w=2
-TIMEOUT=2073600
+TIMEOUT={{ firewall_ipset_timeout }}
+MAXELEM={{ fw_acl_d_ipset_maxelem }}
 
 # read in the iplists
 function readIPLIST {
   SRC=$1
   IPSET=$2
   IPTYPE=$3
+  IPTOUT=$4
 
 if [ ! -f "$SRC" ]; then
     echo "Input IPLIST File not found!: $SRC"
@@ -37,6 +39,11 @@ sed -i 's/^[ \t]*//;s/[ \t]*$//' "$SRC"
 sed -i '/^$/d' "$SRC"
 
 #build a restore list
+if [ "$IPTOUT" = "TIMEOUT" ]; then
+     sed "s/.*/add $IPSET & timeout $TIMEOUT -exist/" "$SRC" > "$IPSET-restore"
+else
+     sed "s/.*/add $IPSET & -exist/" "$SRC" > "$IPSET-restore"
+fi
 sed "s/.*/add $IPSET & timeout $TIMEOUT -exist/" "$SRC" > "$IPSET-restore"
 
 #restore the list
@@ -53,6 +60,9 @@ $IPCMD restore < "$IPSET-restore"
 }
 
 
-{% for list in firewall_blocklists %}
-readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}"
+{% for list in firewall_blocklists if list.persist | bool %}
+readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}" "NOTIMEOUT"
+{% endfor %}
+{% for list in firewall_blocklists if not list.persist | bool %}
+readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}" "TIMEOUT"
 {% endfor %}

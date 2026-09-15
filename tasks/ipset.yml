@@ -2,7 +2,7 @@
 
 - name: Ensure ipset is installed (Debian).
   apt: pkg=ipset state=present
-  when: ansible_os_family == 'Debian'
+  when: ansible_facts["os_family"] == 'Debian'
 
 
 - name: Ensure ipset packages are installed (RedHat).
@@ -10,7 +10,7 @@
     name: "ipset"
     state: present
     enablerepo: "{{ php_enablerepo }}"
-  when: ansible_os_family == 'RedHat'
+  when: ansible_facts["os_family"] == 'RedHat'
 
 
 ## here we should run the get-blocklists so we don't maintain a list here
@@ -23,7 +23,8 @@
     group: root
     mode: 0644
   with_items: "{{ firewall_blocklists }}"
-  notify: restart firewall
+  notify: Restart firewall
+  when: firewall_push_blocklists | bool
 
 - name: Copy firewall ipset script into place.
   template:
@@ -33,7 +34,7 @@
     group: root
     mode: 0744
   when: firewall_mode == 'chain'
-  notify: restart firewall
+  notify: Restart firewall
 
 - name: Get list of existing ipsets
   command: ipset list -n

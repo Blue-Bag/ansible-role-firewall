@@ -120,9 +120,16 @@ iptables -A INPUT -p tcp -m tcp --dport {{ chain.port }} -m state --state {{ cha
 {# Add a rule for each chain #}
 {% for chain in firewall_protected_chains %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --set --name {{ chain.name }} --rsource
+{% if firewall_ipset and fw_acl_a_ip is defined %}
+iptables -A {{ chain.name }} -m state --state NEW -m set --match-set acl_trusted src -j ACCEPT
+{% else %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Allowlist
+{% endif %}
 {% if chain.default == 'ACCEPT'  %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -j IP_Denylist
+{% if chain.ipset is defined %}
+iptables -A {{ chain.name }} -p tcp -m set --match-set {{ chain.ipset }} src -j blocked_traffic
+{% endif %}
 {% else %}
 iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --state NEW -m recent --update --rttl --name {{ chain.name }} --rsource -j LOG --log-prefix "iptables[{{ chain.name }} Attempt]: " --log-level {{ firewall_log_level }}
 {% if firewall_ipset and firewall_reban_hosts %}
