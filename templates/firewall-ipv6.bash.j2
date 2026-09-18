@@ -64,9 +64,11 @@ ip6tables -A blocked_6traffic -j DROP
   ip6tables -A SSHBRUTE -m recent --name SSH --update --seconds 300 --hitcount 10 -j DROP
   ip6tables -A SSHBRUTE -j ACCEPT
 
+{% if firewall_ip6_allow_ssh %}
 # Accept worldwide access to SSH and use SSHBRUTE chain for preventing
 # brute-force attacks.
   ip6tables -A INPUT -p tcp --dport 22 --syn -m conntrack --ctstate NEW -j SSHBRUTE
+{% endif %}
 
 {% if firewall_extra_security %}
 {% include 'firewall-ipv6-icmp.bash.j2' %}

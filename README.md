@@ -65,9 +65,9 @@ In simple mode the role is as per the original
 ### Firewall defaults
 These al relate to both modes.
 ```
-filewall_input_default: 'ACCEPT'
-filewall_forward_default: 'ACCEPT'
-filewall_output_default: 'ACCEPT'
+firewall_input_default: 'ACCEPT'
+firewall_forward_default: 'ACCEPT'
+firewall_output_default: 'ACCEPT'
 ```
 Note: it is advisable to set these to DENY so that all ports are denied by default and only opened explicitly.
 But be cautious when configuring at first to make sure you don't lock your self out!

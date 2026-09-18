@@ -34,9 +34,9 @@ fi
 
 {% if firewall_flush_rules_and_chains %}
 # Completely reset the firewall by removing all rules and chains.
-iptables -P INPUT {{ filewall_input_default }}
-iptables -P FORWARD {{ filewall_forward_default }}
-iptables -P OUTPUT {{ filewall_output_default }}
+iptables -P INPUT {{ firewall_input_default }}
+iptables -P FORWARD {{ firewall_forward_default }}
+iptables -P OUTPUT {{ firewall_output_default }}
 iptables -t nat -F
 iptables -t mangle -F
 iptables -F
@@ -167,7 +167,7 @@ iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --s
 iptables -A IP_Allowlist -s {{ acl.ip }} -j ACCEPT
 {% endfor %}
 
-{% for val in _firewall_allowed_ips %}
+{% for val in _firewall_allowed_ips | difference(fw_acl_a_ip | map(attribute='ip') | list) %}
 # allowed
 iptables -A IP_Allowlist -s {{ val }} -j ACCEPT
 {% endfor %}

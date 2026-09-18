@@ -40,9 +40,9 @@ firewall_allowed_tcp_ports_out:
   - "25"
 
 # firewall defaults
-filewall_input_default: 'ACCEPT'
-filewall_forward_default: 'ACCEPT'
-filewall_output_default: 'ACCEPT'
+firewall_input_default: 'ACCEPT'
+firewall_forward_default: 'ACCEPT'
+firewall_output_default: 'ACCEPT'
 
 firewall_allowed_udp_ports: []
 firewall_forwarded_tcp_ports: []
@@ -51,6 +51,8 @@ firewall_additional_rules: []
 
 firewall_enable_ipv6: true
 firewall_ip6_additional_rules: []
+# Set false on hosts where SSH must not be reachable over public IPv6.
+firewall_ip6_allow_ssh: true
 
 firewall_log_dropped_packets: true
 
