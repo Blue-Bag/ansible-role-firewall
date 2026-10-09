@@ -33,7 +33,7 @@ iptables -A IP_Add2bannedhosts -m set --match-set {{ fw_acl_a_ipset }} src -j RE
 iptables -A IP_Add2bannedhosts -m set --match-set {{ fw_acl_a_ipset }}-net src -j RETURN
 {% endif %}
 {% if fw_acl_a_cf %}
-iptables -A IP_Add2bannedhosts -m set --match-set {{ firewall_cf_ipset }} src -j RETURN
+iptables -A IP_Add2bannedhosts -m set --match-set {{ fw_acl_cf_ipset }} src -j RETURN
 {% endif %}
 iptables -A IP_Add2bannedhosts -j SET --add-set {{ firewall_reban_list }} src --exist
 # match src against banned hosts lists
@@ -42,7 +42,7 @@ iptables -I INPUT 4 -m set --match-set {{ firewall_reban_list }} src -j blocked_
 
 
 {% for list in firewall_blocklists if list.persist | bool %}
-readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}" "{{ list.timeout }}"
+readIPLIST "{{ firewall_config_dir }}/{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}" "{{ list.timeout }}"
 {% endfor %}
 
 

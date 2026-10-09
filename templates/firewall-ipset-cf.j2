@@ -1,21 +1,12 @@
 
 #################   Cloudflare Allowlisting #####################
-# it is possible that CF ip ranges may change so we could create a timeout list
-# for now we creat a simple list
+# The set is kept up to date by {{ firewall_script_dir }}/firewall-upd8cf.sh (cron).
+# Here we only make sure it exists and seed it from the list that script
+# caches, so the firewall does not depend on the network at boot.
 createIPSET "{{ fw_acl_cf_ipset }}" "hash:net"
 
-createIPSET "{{ fw_acl_cf_ipset6 }}" "hash:net" family inet6
-
-# Now populate the set with Cloudflare IP ranges:
-for x in $(curl https://www.cloudflare.com/ips-v4); do "$IPCMD" add {{ fw_acl_cf_ipset }} $x; done
-
-for x in $(curl https://www.cloudflare.com/ips-v6); do "$IPCMD" add {{ fw_acl_cf_ipset6 }} $x; done
-
-# Allow cloudflare traffic
-iptables -A INPUT -m set --match-set {{ fw_acl_cf_ipset }} src -p tcp -m multiport --dports http,https -j ACCEPT
-ip6tables -A INPUT -m set --match-set {{ fw_acl_cf_ipset6 }} src -p tcp -m multiport --dports http,https -j ACCEPT
-
-
-
+if [ -f "{{ fw_acl_cf_list }}" ]; then
+  sed "s/.*/add {{ fw_acl_cf_ipset }} & -exist/" "{{ fw_acl_cf_list }}" | "$IPCMD" restore
+fi
 
 ##################  end CF Allowlisting #######################

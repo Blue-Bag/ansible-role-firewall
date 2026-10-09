@@ -4,7 +4,7 @@ After=syslog.target network.target
 
 [Service]
 Type=oneshot
-ExecStart=/etc/firewall.bash
+ExecStart={{ firewall_config_dir }}/firewall.bash
 ExecStop=/sbin/iptables -F
 RemainAfterExit=yes
 

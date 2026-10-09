@@ -1,0 +1,46 @@
+#!/bin/bash
+# {{ ansible_managed }}
+# Filename: firewall-upd8cf
+# Called from cron to keep the Cloudflare allow ipset up to date (IPv4 only)
+# and to release any Cloudflare edge that has ended up in the reban list.
+set -euo pipefail
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+IPSET='{{ fw_acl_cf_ipset }}'
+LIST='{{ fw_acl_cf_list }}'
+MIN_PREFIXES={{ fw_acl_cf_min_prefixes }}
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+
+# Keep only well-formed IPv4 CIDRs; anything else means a failed fetch, an
+# error page or a truncated response.
+curl -fsS --max-time 30 https://www.cloudflare.com/ips-v4 \
+  | grep -E '^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$' | sort -u > "$tmp" || true
+
+count="$(wc -l < "$tmp")"
+if [ "$count" -lt "$MIN_PREFIXES" ]; then
+  echo "firewall-upd8cf: only $count prefixes (expected >= $MIN_PREFIXES) - keeping existing set" >&2
+  exit 1
+fi
+
+# Cache the list so firewall.bash can seed the set without the network.
+install -o root -g root -m 0644 "$tmp" "$LIST"
+
+# Build in a scratch set and swap, so the live set is never partially filled
+# and ranges Cloudflare has dropped are removed.
+ipset create "$IPSET" hash:net family inet -exist
+ipset create "$IPSET-new" hash:net family inet -exist
+ipset flush "$IPSET-new"
+sed "s|.*|add $IPSET-new & -exist|" "$tmp" | ipset restore
+ipset swap "$IPSET-new" "$IPSET"
+ipset destroy "$IPSET-new"
+
+{% if firewall_reban_hosts %}
+for ip in $(ipset list '{{ firewall_reban_list }}' 2>/dev/null | awk '/^[0-9]/ {print $1}'); do
+  if ipset test "$IPSET" "$ip" >/dev/null 2>&1; then
+    ipset del '{{ firewall_reban_list }}' "$ip"
+    echo "firewall-upd8cf: removed $ip from {{ firewall_reban_list }}"
+  fi
+done
+{% endif %}

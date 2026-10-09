@@ -2,6 +2,14 @@
 # firewall mode [simple | chain ]
 firewall_mode: 'simple'
 firewall_backup_cfg: false
+
+# where the firewall keeps its files
+# ruleset script and the block lists
+firewall_config_dir: '/etc/firewall'
+# helper scripts run from cron / by hand
+firewall_script_dir: '/usr/local/sbin'
+# generated files (ipset restore files, cached Cloudflare list)
+firewall_state_dir: '/var/lib/firewall'
 # export the rules (won't be idempotent)
 firewall_iptables_save: true
 
@@ -231,5 +239,10 @@ firewall_badips_db: '/usr/share/badips/badips.db'
 
 # previously firewall_whitelist_cf
 fw_acl_a_cf: false
-fw_acl_cf_ipset: 'acl_trusted_cf'
-fw_acl_cf_ipset6: 'acl_trusted6_cf'
+fw_acl_cf_ipset: 'cf_ranges'
+# list cached by firewall-upd8cf.sh, used to seed the set at firewall start
+fw_acl_cf_list: "{{ firewall_state_dir }}/cf-ips.txt"
+# Minimum number of prefixes a fetch must return to be considered sane.
+fw_acl_cf_min_prefixes: 10
+fw_acl_cf_cron_hour: '4'
+fw_acl_cf_cron_minute: '37'

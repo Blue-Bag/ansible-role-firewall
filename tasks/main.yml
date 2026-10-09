@@ -13,6 +13,8 @@
 - name: Ensure iptables is installed.
   package: name=iptables state=present
 
+- import_tasks: paths.yml
+
 # https://ilhicas.com/2018/04/08/Fixing-do-you-need-insmod.html
 - name: init ipv6
   command: "modprobe ip6table_filter"
@@ -29,12 +31,12 @@
 - name: Flush iptables the first time playbook runs.
   command: >
     iptables -F
-    creates=/etc/firewall.bash
+    creates={{ firewall_config_dir }}/firewall.bash
 
 - name: Copy firewall script into place.
   template:
     src: firewall.bash.j2
-    dest: /etc/firewall.bash
+    dest: "{{ firewall_config_dir }}/firewall.bash"
     owner: root
     group: root
     mode: 0744
@@ -83,7 +85,7 @@
 - name: Copy firewall chain script into place.
   template:
     src: firewall-chain.bash.j2
-    dest: /etc/firewall.bash
+    dest: "{{ firewall_config_dir }}/firewall.bash"
     owner: root
     group: root
     mode: 0744
@@ -130,6 +132,12 @@
     group: root
     mode: 0644
   when: ansible_facts['service_mgr'] == 'systemd'
+  register: _firewall_unit
+
+- name: Reload systemd so the unit picks up the firewall script path.
+  systemd:
+    daemon_reload: true
+  when: _firewall_unit is changed
 
 - name: Configure the firewall service.
   service:

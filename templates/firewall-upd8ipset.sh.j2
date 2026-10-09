@@ -19,7 +19,6 @@ function readIPLIST {
   SRC=$1
   IPSET=$2
   IPTYPE=$3
-  IPTOUT=$4
 
 if [ ! -f "$SRC" ]; then
     echo "Input IPLIST File not found!: $SRC"
@@ -39,15 +38,10 @@ sed -i 's/^[ \t]*//;s/[ \t]*$//' "$SRC"
 sed -i '/^$/d' "$SRC"
 
 #build a restore list
-if [ "$IPTOUT" = "TIMEOUT" ]; then
-     sed "s/.*/add $IPSET & timeout $TIMEOUT -exist/" "$SRC" > "$IPSET-restore"
-else
-     sed "s/.*/add $IPSET & -exist/" "$SRC" > "$IPSET-restore"
-fi
-sed "s/.*/add $IPSET & timeout $TIMEOUT -exist/" "$SRC" > "$IPSET-restore"
+sed "s/.*/add $IPSET & timeout $TIMEOUT -exist/" "$SRC" > "{{ firewall_state_dir }}/$IPSET-restore"
 
 #restore the list
-$IPCMD restore < "$IPSET-restore"
+$IPCMD restore < "{{ firewall_state_dir }}/$IPSET-restore"
 
 # add the ips/networks to the list
 #while read _ip
@@ -60,9 +54,6 @@ $IPCMD restore < "$IPSET-restore"
 }
 
 
-{% for list in firewall_blocklists if list.persist | bool %}
-readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}" "NOTIMEOUT"
-{% endfor %}
-{% for list in firewall_blocklists if not list.persist | bool %}
-readIPLIST "/etc/firewall-{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}" "TIMEOUT"
+{% for list in firewall_blocklists %}
+readIPLIST "{{ firewall_config_dir }}/{{ list.name }}.txt" "{{ list.name }}" "{{ list.type }}"
 {% endfor %}

@@ -30,6 +30,15 @@ None.
 
 Available variables are listed below, along with default values (see `vars/main.yml`):
 
+### File locations
+`firewall_config_dir: '/etc/firewall'` - the ruleset script (`firewall.bash`) and the block lists (`<list name>.txt`)
+
+`firewall_script_dir: '/usr/local/sbin'` - helper scripts (`firewall-upd8ipset.sh`, `firewall-upd8cf.sh`)
+
+`firewall_state_dir: '/var/lib/firewall'` - generated files (ipset restore files, cached Cloudflare list)
+
+Files from the old locations (`/etc/firewall.bash`, `/etc/firewall-<list name>.txt`, `/etc/firewall-upd8*.sh`) are moved or removed on the next run.
+
 ### Backing up and saving rules
 `firewall_backup_cfg: false`
 Make a backup of the existing firewall.bash script. This is handy in case you make undesired changes so you can revert to the previous rule set . This uses the backup parameter of the template module:
@@ -392,11 +401,19 @@ service to report on - we want all of ours
 
 
 ##  Cloudflare
-You can specif a list of trusted ips such as Cloudflare.
-This will stop blocking of cloudflare traffic
+Allow Cloudflare edge ips on http/https ahead of the blocklists, and never
+add them to the reban list. Requires `firewall_ipset`.
+
 `fw_acl_a_cf: false`
 
-`firewall_cf_ipset: 'allowlist_cf'`
+`fw_acl_cf_ipset: 'cf_ranges'` - ipset holding the Cloudflare ranges (IPv4 only)
+
+`fw_acl_cf_list: "{{ firewall_state_dir }}/cf-ips.txt"` - cached list the set is seeded from when the firewall starts
+
+`fw_acl_cf_cron_hour: '4'` / `fw_acl_cf_cron_minute: '37'` - daily refresh time
+
+`firewall-upd8cf.sh` runs daily from cron: it fetches the current ranges,
+rebuilds the set, and removes any Cloudflare ip found in `firewall_reban_list`.
 
 
 ## IPset

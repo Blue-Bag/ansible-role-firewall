@@ -1,0 +1,41 @@
+---
+
+- name: Ensure firewall directories exist.
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  loop:
+    - "{{ firewall_config_dir }}"
+    - "{{ firewall_state_dir }}"
+
+# The script must be moved before anything checks for it: the first-run flush
+# is keyed on its existence.
+- name: Move the firewall script from its old location.
+  command: mv /etc/firewall.bash {{ firewall_config_dir }}/firewall.bash
+  args:
+    removes: /etc/firewall.bash
+    creates: "{{ firewall_config_dir }}/firewall.bash"
+
+- name: Move block lists from their old location.
+  command: mv /etc/firewall-{{ item.name }}.txt {{ firewall_config_dir }}/{{ item.name }}.txt
+  args:
+    removes: "/etc/firewall-{{ item.name }}.txt"
+    creates: "{{ firewall_config_dir }}/{{ item.name }}.txt"
+  loop: "{{ firewall_blocklists }}"
+
+- name: Remove firewall scripts left in the old location.
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/firewall.bash
+    - /etc/firewall-upd8ipset.sh
+
+- name: Remove block lists and restore files left in the old locations.
+  file:
+    path: "{{ item.1 | format(item.0) }}"
+    state: absent
+  loop: "{{ firewall_blocklists | map(attribute='name') | product(['/etc/firewall-%s.txt', '/etc/%s-restore', '/%s-restore']) | list }}"

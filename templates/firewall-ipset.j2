@@ -91,10 +91,10 @@ fi
  sed -i '/^$/d' $SRC
 
 #build a restore list
-sed "s/.*/add $IPSET & timeout $IPTME -exist/" "$SRC" > "$IPSET-restore"
+sed "s/.*/add $IPSET & timeout $IPTME -exist/" "$SRC" > "{{ firewall_state_dir }}/$IPSET-restore"
 
 #restore the list
-$IPCMD restore < "$IPSET-restore"
+$IPCMD restore < "{{ firewall_state_dir }}/$IPSET-restore"
 
 # add the ips/networks to the list
 #while read _ip
@@ -119,6 +119,11 @@ $IPCMD restore < "$IPSET-restore"
 
 {% if firewall_blocklists  is defined %}
 {% include 'firewall-ipset-blocklists.bash.j2' %}
+{% endif %}
+
+{% if fw_acl_a_cf %}
+# Allow cloudflare traffic - inserted last so it sits above the blocklists
+iptables -I INPUT -m set --match-set {{ fw_acl_cf_ipset }} src -p tcp -m multiport --dports http,https -j ACCEPT
 {% endif %}
 
 #################     end of ipsets   #####################

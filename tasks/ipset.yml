@@ -18,7 +18,7 @@
 - name: Put up the block lists
   copy:
     src: "{{ item.src }}"
-    dest: "/etc/firewall-{{ item.name }}.txt"
+    dest: "{{ firewall_config_dir }}/{{ item.name }}.txt"
     owner: root
     group: root
     mode: 0644
@@ -29,12 +29,38 @@
 - name: Copy firewall ipset script into place.
   template:
     src: 'firewall-upd8ipset.sh.j2'
-    dest: "/etc/firewall-upd8ipset.sh"
+    dest: "{{ firewall_script_dir }}/firewall-upd8ipset.sh"
     owner: root
     group: root
     mode: 0744
   when: firewall_mode == 'chain'
   notify: Restart firewall
+
+- name: Copy Cloudflare ipset update script into place.
+  template:
+    src: 'firewall-upd8cf.sh.j2'
+    dest: "{{ firewall_script_dir }}/firewall-upd8cf.sh"
+    owner: root
+    group: root
+    mode: 0744
+  when: fw_acl_a_cf | bool
+
+# The set contents are owned by the script, not by Ansible. This only makes
+# sure the cached list exists before the firewall first references it.
+- name: Seed the Cloudflare ipset
+  command: "{{ firewall_script_dir }}/firewall-upd8cf.sh"
+  args:
+    creates: "{{ fw_acl_cf_list }}"
+  when: fw_acl_a_cf | bool
+
+- name: Schedule the Cloudflare ipset update
+  cron:
+    name: 'firewall update cloudflare ipset'
+    user: root
+    hour: "{{ fw_acl_cf_cron_hour }}"
+    minute: "{{ fw_acl_cf_cron_minute }}"
+    job: "{{ firewall_script_dir }}/firewall-upd8cf.sh"
+  when: fw_acl_a_cf | bool
 
 - name: Get list of existing ipsets
   command: ipset list -n
