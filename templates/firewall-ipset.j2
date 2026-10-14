@@ -42,7 +42,7 @@ function createIPSET-Timeout {
   else
     # if it does exist check it uses the timeouts
 
-    "$IPCMD" list "$IPSET" | grep -E '^Header: family inet.*timeout.([0-9]*)$'
+    "$IPCMD" list "$IPSET" | grep -E '^Header: family inet.* timeout [0-9]+'
 
     RESULT=$?   # grep will return 0 if it finds 'failure',  non-zero if it didn't
 
