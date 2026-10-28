@@ -66,6 +66,8 @@ Start the firewall
 Enable the firewall on reboot
 `firewall_flush_rules_and_chains: true`
 Flush the existing rules and chains when building the firewall.
+`firewall_restart_fail2ban: true`
+If fail2ban is installed, add a systemd drop-in so fail2ban restarts (and rebuilds its chains) whenever the firewall restarts.
 
 
 ## Simple config

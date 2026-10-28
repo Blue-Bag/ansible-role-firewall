@@ -23,6 +23,10 @@ firewall_enabled_at_boot: true
 
 firewall_flush_rules_and_chains: true
 
+# restart fail2ban whenever the firewall restarts (the flush removes its chains)
+# only applied when fail2ban is installed
+firewall_restart_fail2ban: true
+
 # we may ewant to clear all ipsets
 # generally no as we can do that in the play and not
 # every time the firewall restarts

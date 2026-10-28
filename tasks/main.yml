@@ -134,10 +134,42 @@
   when: ansible_facts['service_mgr'] == 'systemd'
   register: _firewall_unit
 
+- name: Check whether fail2ban is installed.
+  service_facts:
+  when:
+    - firewall_restart_fail2ban
+    - ansible_facts['service_mgr'] == 'systemd'
+
+# The firewall flushes all chains, including fail2ban's, so restart fail2ban with it.
+- block:
+    - name: Ensure the fail2ban drop-in directory exists.
+      file:
+        path: /etc/systemd/system/fail2ban.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Tie fail2ban to the firewall service.
+      copy:
+        dest: /etc/systemd/system/fail2ban.service.d/firewall.conf
+        content: |
+          [Unit]
+          After=firewall.service
+          PartOf=firewall.service
+        owner: root
+        group: root
+        mode: 0644
+      register: _fail2ban_dropin
+  when:
+    - firewall_restart_fail2ban
+    - ansible_facts['service_mgr'] == 'systemd'
+    - "'fail2ban.service' in ansible_facts.services"
+
 - name: Reload systemd so the unit picks up the firewall script path.
   systemd:
     daemon_reload: true
-  when: _firewall_unit is changed
+  when: _firewall_unit is changed or _fail2ban_dropin is changed
 
 - name: Configure the firewall service.
   service:
