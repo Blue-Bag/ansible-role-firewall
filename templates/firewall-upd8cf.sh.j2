@@ -29,9 +29,11 @@ install -o root -g root -m 0644 "$tmp" "$LIST"
 
 # Build in a scratch set and swap, so the live set is never partially filled
 # and ranges Cloudflare has dropped are removed.
-ipset create "$IPSET" hash:net family inet -exist
-ipset create "$IPSET-new" hash:net family inet -exist
-ipset flush "$IPSET-new"
+if ! ipset list -n "$IPSET" >/dev/null 2>&1; then
+  ipset create "$IPSET" hash:net family inet hashsize 4096 comment
+fi
+ipset destroy "$IPSET-new" 2>/dev/null || true
+ipset create "$IPSET-new" hash:net family inet hashsize 4096 comment
 sed "s|.*|add $IPSET-new & -exist|" "$tmp" | ipset restore
 ipset swap "$IPSET-new" "$IPSET"
 ipset destroy "$IPSET-new"
