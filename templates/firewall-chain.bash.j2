@@ -163,7 +163,7 @@ iptables -A {{ chain.name }} -p tcp -m tcp --dport {{ chain.port }} -m state --s
 iptables -A IP_Allowlist -s {{ acl.ip }} -j ACCEPT
 {% endfor %}
 
-{% for val in _firewall_allowed_ips | difference(fw_acl_a_ip | map(attribute='ip') | list) %}
+{% for val in _firewall_allowed_ips | difference(fw_acl_a_ip | map(attribute='ip') | list) | sort %}
 # allowed
 iptables -A IP_Allowlist -s {{ val }} -j ACCEPT
 {% endfor %}
