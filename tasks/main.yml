@@ -48,11 +48,11 @@
 #   debug:
 #     msg: "{{ groups['remote'] |map('extract', hostvars, ['custom_facts','aliases','0','ip'])|list }}"
 #     msg="{{ hostvars|fetchlistfromdict(groups['remote']) |map(attribute='custom_facts.aliases.0.ip')|list}}"
-# {{ groups['remote'] |map('extract', hostvars, ['ansible_ssh_host'])|list }}
+# {{ groups['remote'] |map('extract', hostvars, ['ansible_host'])|list }}
 # note this needs the fetchlistfromdict filter plugin to work
 - name: Setfact for allowed ips list for chain script
   set_fact:
-    _group_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[fw_acl_a_group])|map(attribute='ansible_ssh_host')|list|unique }}"
+    _group_allowed_ips: "{{ hostvars|fetchlistfromdict(groups[fw_acl_a_group])|map(attribute='ansible_host')|list|unique }}"
   when:
     - firewall_mode == 'chain'
     - fw_acl_a_group is defined
