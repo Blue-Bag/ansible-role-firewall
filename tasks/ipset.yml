@@ -22,6 +22,7 @@
     owner: root
     group: root
     mode: 0644
+    force: false
   with_items: "{{ firewall_blocklists }}"
   notify: Restart firewall
   when: firewall_push_blocklists | bool

@@ -363,6 +363,11 @@ firewall_blocklists:
   }
 ```
 
+The `src` files only seed a server: a list is copied when it is missing on the
+server and an existing list is never overwritten, because the lists are kept up
+to date on the server itself. Set `firewall_push_blocklists: false` to skip the
+copy altogether.
+
 ### Extended rules
 
 `firewall_extra_security: true`
